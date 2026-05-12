@@ -17,10 +17,11 @@ function formatPickup(start: string, end: string) {
 }
 
 export default function CorpHomeScreen() {
-  const [activeTab, setActiveTab] = useState<"post" | "claimed">("post");
+  const [activeTab, setActiveTab] = useState<"post" | "claimed" | "listings">("post");
   const [claimedListings, setClaimedListings] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [myListings, setMyListings] = useState([]);
   const [orgId, setOrgId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function CorpHomeScreen() {
 
   useEffect(() => {
     if (activeTab === "claimed" && orgId) fetchClaimed();
+    if (activeTab === "listings" && orgId) fetchMyListings();
   }, [activeTab]);
 
   const fetchClaimed = async () => {
@@ -54,6 +56,16 @@ export default function CorpHomeScreen() {
       .order("created_at", { ascending: false });
     console.log("fetchClaimed orgId:", orgId, "data:", JSON.stringify(data), "error:", JSON.stringify(error));
     if (!error) setClaimedListings(data || []);
+  };
+
+  const fetchMyListings = async () => {
+    if (!orgId) return;
+    const { data, error } = await supabase
+      .from("listings")
+      .select("*")
+      .eq("organization_id", orgId)
+      .order("created_at", { ascending: false });
+    if (!error) setMyListings(data || []);
   };
 
   const onRefresh = useCallback(async () => {
@@ -124,10 +136,38 @@ export default function CorpHomeScreen() {
             Claimed
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "listings" && styles.tabActive]}
+          onPress={() => setActiveTab("listings")}
+        >
+          <Text style={[styles.tabText, activeTab === "listings" && styles.tabTextActive]}>
+            My Listings
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {activeTab === "post" ? (
         <CreateListingScreen />
+      ) : activeTab === "listings" ? (
+        <FlatList
+          data={myListings}
+          keyExtractor={(item) => item.id}
+          ListEmptyComponent={<Text style={styles.empty}>No listings posted yet.</Text>}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>{item.title}</Text>
+              <Text style={styles.cardMeta}>📍 {item.pickup_address || "No address"}</Text>
+              <Text style={styles.cardMeta}>🕐 {formatPickup(item.pickup_start, item.pickup_end)}</Text>
+              {item.quantity_kg ? <Text style={styles.cardMeta}>⚖️ {item.quantity_kg} kg</Text> : null}
+              {item.serves_approx ? <Text style={styles.cardMeta}>👥 Serves ~{item.serves_approx}</Text> : null}
+              <View style={[styles.statusBadge, { backgroundColor: item.status === "completed" ? "#e8f8f0" : item.status === "matched" ? "#fff9e6" : "#e8f4fd" }]}>
+                <Text style={[styles.statusText, { color: item.status === "completed" ? "#27ae60" : item.status === "matched" ? "#f39c12" : "#3498db" }]}>
+                  {item.status === "completed" ? "✅ Completed" : item.status === "matched" ? "🔔 Claimed" : "🟢 Open"}
+                </Text>
+              </View>
+            </View>
+          )}
+        />
       ) : (
         <FlatList
           data={claimedListings}
