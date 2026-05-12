@@ -4,6 +4,7 @@ import {
   FlatList, RefreshControl, SafeAreaView, Alert
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { sendPushNotification } from "../lib/notifications";
 import CreateListingScreen from "./CreateListingScreen";
 
 function formatPickup(start: string, end: string) {
@@ -97,6 +98,16 @@ export default function CorpHomeScreen() {
 
       if (listingError) throw listingError;
 
+      // Notify nonprofit
+      const { data: nonprofitUser } = await supabase
+        .from("users")
+        .select("push_token")
+        .eq("organization_id", match.nonprofit_id)
+        .eq("role", "nonprofit")
+        .maybeSingle();
+      if (nonprofitUser?.push_token) {
+        await sendPushNotification(nonprofitUser.push_token, "Pickup Confirmed! ✅", `Your pickup for "${listing.title}" has been confirmed. See you soon!`);
+      }
       Alert.alert("Confirmed!", "Pickup has been confirmed. The nonprofit will be notified.");
       fetchClaimed();
     } catch (err: any) {

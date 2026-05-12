@@ -4,6 +4,7 @@ import {
   TouchableOpacity, RefreshControl, SafeAreaView, Alert
 } from "react-native";
 import { supabase } from "../lib/supabase";
+import { sendPushNotification } from "../lib/notifications";
 import ImpactScreen from "./ImpactScreen";
 
 function formatPickup(start: string, end: string) {
@@ -89,7 +90,17 @@ export default function NonprofitHomeScreen() {
         .update({ status: "matched" })
         .eq("id", listing.id);
       if (updateError) throw updateError;
-      Alert.alert("Claimed!", "You've claimed this donation. The corp will be notified to confirm pickup.");
+      // Notify corp
+      const { data: corpUser } = await supabase
+        .from("users")
+        .select("push_token")
+        .eq("organization_id", listing.organization_id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (corpUser?.push_token) {
+        await sendPushNotification(corpUser.push_token, "Donation Claimed! 🎉", `Your listing "${listing.title}" has been claimed by a nonprofit.`);
+      }
+      Alert.alert("Claimed!", "You\'ve claimed this donation. The corp will be notified to confirm pickup.");
       fetchListings();
     } catch (err: any) {
       Alert.alert("Error", err.message || "Something went wrong.");

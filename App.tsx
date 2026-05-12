@@ -3,6 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "./lib/supabase";
+import { registerForPushNotifications } from "./lib/notifications";
 import AuthScreen from "./screens/AuthScreen";
 import CreateListingScreen from "./screens/CreateListingScreen";
 import CorpHomeScreen from "./screens/CorpHomeScreen";
@@ -34,6 +35,7 @@ export default function App() {
       .from("users").select("role, organization_id").eq("id", userId).maybeSingle();
     setUserRole(data?.role || "admin");
     setLoading(false);
+    registerForPushNotifications(userId);
   };
 
   if (loading) return null;
