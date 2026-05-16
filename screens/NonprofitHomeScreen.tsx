@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View, Text, FlatList, StyleSheet,
-  TouchableOpacity, RefreshControl, SafeAreaView, Alert
+  TouchableOpacity, RefreshControl, SafeAreaView, Alert, ActivityIndicator
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import { sendPushNotification } from "../lib/notifications";
@@ -23,6 +23,7 @@ export default function NonprofitHomeScreen() {
   const [myClaims, setMyClaims] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [claiming, setClaiming] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [orgId, setOrgId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function NonprofitHomeScreen() {
       .eq("status", "open")
       .order("created_at", { ascending: false });
     if (!error) setListings(data || []);
+    setLoading(false);
   };
 
   const fetchMyClaims = async () => {
@@ -169,7 +171,7 @@ export default function NonprofitHomeScreen() {
           data={listings}
           keyExtractor={(item) => item.id}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={styles.empty}>No listings available yet.</Text>}
+          ListEmptyComponent={loading ? <ActivityIndicator style={{marginTop:60}} color="#2ecc71" size="large" /> : <Text style={styles.empty}>No listings available yet.</Text>}
           renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>{item.title}</Text>

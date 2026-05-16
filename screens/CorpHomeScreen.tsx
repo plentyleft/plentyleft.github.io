@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, RefreshControl, SafeAreaView, Alert
+  FlatList, RefreshControl, SafeAreaView, Alert, ActivityIndicator
 } from "react-native";
 import { supabase } from "../lib/supabase";
 import { sendPushNotification } from "../lib/notifications";
@@ -23,6 +23,8 @@ export default function CorpHomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [myListings, setMyListings] = useState([]);
+  const [loadingClaimed, setLoadingClaimed] = useState(true);
+  const [loadingListings, setLoadingListings] = useState(true);
   const [orgId, setOrgId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,6 +69,7 @@ export default function CorpHomeScreen() {
       .eq("organization_id", orgId)
       .order("created_at", { ascending: false });
     if (!error) setMyListings(data || []);
+    setLoadingListings(false);
   };
 
   const onRefresh = useCallback(async () => {
@@ -163,7 +166,7 @@ export default function CorpHomeScreen() {
         <FlatList
           data={myListings}
           keyExtractor={(item) => item.id}
-          ListEmptyComponent={<Text style={styles.empty}>No listings posted yet.</Text>}
+          ListEmptyComponent={loadingListings ? <ActivityIndicator style={{marginTop:60}} color="#3498db" size="large" /> : <Text style={styles.empty}>No listings posted yet.</Text>}
           renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>{item.title}</Text>
@@ -184,9 +187,7 @@ export default function CorpHomeScreen() {
           data={claimedListings}
           keyExtractor={(item) => item.id}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={
-            <Text style={styles.empty}>No claimed listings yet.</Text>
-          }
+          ListEmptyComponent={loadingClaimed ? <ActivityIndicator style={{marginTop:60}} color="#3498db" size="large" /> : <Text style={styles.empty}>No claimed listings yet.</Text>}
           renderItem={({ item }) => {
             const match = item.matches?.[0];
             return (
