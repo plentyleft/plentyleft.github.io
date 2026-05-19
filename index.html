@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlentyLeft — Surplus Food, Redistributed</title><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#1C5C38;--green-mid:#2E7D52;--green-light:#E8F5EE;--cream:#FAF8F3;--amber:#C8860A;--amber-light:#FDF3DC;--text:#1A1A18;--muted:#5C6058;--border:#D8DDD4;--white:#FFFFFF}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);line-height:1.6;font-size:16px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(250,248,243,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--green);text-decoration:none;letter-spacing:-0.02em}
+.nav-logo span{color:var(--amber)}
+.gate{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6rem 2rem 4rem;text-align:center}
+.badge{display:inline-flex;align-items:center;gap:8px;background:var(--amber-light);color:var(--amber);font-size:.78rem;font-weight:500;padding:.35rem 1rem;border-radius:100px;margin-bottom:1.5rem;border:1px solid rgba(200,134,10,.2);letter-spacing:.04em;text-transform:uppercase}
+.badge::before{content:'';width:6px;height:6px;background:var(--amber);border-radius:50%}
+h1{font-family:'DM Serif Display',serif;font-size:clamp(2.4rem,5vw,3.8rem);letter-spacing:-.03em;line-height:1.08;margin-bottom:1rem}
+h1 em{font-style:italic;color:var(--green-mid)}
+.gate>p{font-size:1.05rem;color:var(--muted);font-weight:300;max-width:420px;margin:0 auto 3rem;line-height:1.7}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;width:100%;max-width:680px}
+.card{background:var(--white);border:1.5px solid var(--border);border-radius:24px;padding:2.5rem 2rem;text-align:left;transition:border-color .2s,transform .2s,box-shadow .2s;display:block;text-decoration:none;color:inherit}
+.card:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(28,92,56,.1)}
+.card.corp:hover{border-color:var(--green-mid)}
+.card.np:hover{border-color:var(--amber)}
+.card-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:1.25rem;text-align:center;line-height:52px}
+.card.corp .card-icon{background:var(--green-light)}
+.card.np .card-icon{background:var(--amber-light)}
+.card h3{font-size:1.1rem;font-weight:500;margin-bottom:.4rem}
+.card p{font-size:.85rem;color:var(--muted);font-weight:300;line-height:1.5;margin:0}
+.pill{display:inline-block;margin-top:1rem;font-size:.75rem;font-weight:500;padding:4px 12px;border-radius:100px}
+.card.corp .pill{background:var(--green-light);color:var(--green)}
+.card.np .pill{background:var(--amber-light);color:var(--amber)}
+footer{border-top:1px solid var(--border);padding:2rem 2rem;display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto;flex-wrap:wrap;gap:1rem}
+.footer-logo{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--green);text-decoration:none}
+.footer-links{display:flex;gap:1.5rem;list-style:none}
+.footer-links a{font-size:.82rem;color:var(--muted);text-decoration:none}
+.footer-links a:hover{color:var(--green)}
+.footer-copy{font-size:.78rem;color:var(--muted);font-weight:300}
+@media(max-width:600px){.cards{grid-template-columns:1fr}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.f1{animation:fadeUp .45s ease both}
+.f2{animation:fadeUp .45s .1s ease both}
+.f3{animation:fadeUp .45s .2s ease both}
+.f4{animation:fadeUp .45s .3s ease both}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo">Plenty<span>Left</span></a>
+</nav>
+<div class="gate">
+  <div class="badge f1">Now available in NYC</div>
+  <h1 class="f2">Surplus food,<br><em>redistributed.</em></h1>
+  <p class="f3">Connect corporate catering leftovers with nonprofits that need them — automatically. Who are you?</p>
+  <div class="cards f4">
+    <a href="corporate.html" class="card corp">
+      <div class="card-icon">🥡</div>
+      <h3>We have food to give</h3>
+      <p>Corporate office, law firm, or any organization with regular catering and leftover food.</p>
+      <div class="pill">Get started →</div>
+    </a>
+    <a href="nonprofit.html" class="card np">
+      <div class="card-icon">🍽️</div>
+      <h3>We need food</h3>
+      <p>Nonprofit, shelter, or community organization looking for food donations in your area.</p>
+      <div class="pill">Get started →</div>
+    </a>
+  </div>
+</div>
+<footer>
+  <a href="/" class="footer-logo">PlentyLeft</a>
+  <ul class="footer-links">
+    <li><a href="https://plentyleft.github.io/legal" target="_blank">Privacy policy</a></li>
+    <li><a href="https://plentyleft.github.io/legal" target="_blank">Terms of service</a></li>
+    <li><a href="mailto:plentyleftapp@gmail.com">Contact</a></li>
+  </ul>
+  <span class="footer-copy">© 2026 PlentyLeft. All rights reserved.</span>
+</footer>
+</body>
+</html>

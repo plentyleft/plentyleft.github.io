@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlentyLeft for Corporations — Turn Leftovers into Impact</title><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#1C5C38;--green-mid:#2E7D52;--green-light:#E8F5EE;--green-pale:#F4FAF6;--cream:#FAF8F3;--amber:#C8860A;--amber-light:#FDF3DC;--text:#1A1A18;--muted:#5C6058;--border:#D8DDD4;--white:#FFFFFF}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);line-height:1.6;font-size:16px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(250,248,243,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--green);text-decoration:none;letter-spacing:-0.02em}
+.nav-logo span{color:var(--amber)}
+.nav-links{display:flex;align-items:center;gap:2rem;list-style:none}
+.nav-links a{text-decoration:none;color:var(--muted);font-size:.9rem;transition:color .2s}
+.nav-links a:hover{color:var(--green)}
+.nav-back{font-size:.85rem;color:var(--muted);text-decoration:none;display:flex;align-items:center;gap:6px}
+.nav-back:hover{color:var(--green)}
+.nav-cta{background:var(--green)!important;color:var(--white)!important;padding:.5rem 1.25rem!important;border-radius:100px;font-weight:500!important}
+.hero{min-height:100vh;display:flex;align-items:center;padding:8rem 2rem 5rem;max-width:1200px;margin:0 auto;position:relative}
+.hero-content{max-width:620px}
+h1{font-family:'DM Serif Display',serif;font-size:clamp(2.6rem,5.5vw,4.2rem);line-height:1.08;letter-spacing:-.03em;margin-bottom:1.25rem}
+h1 em{font-style:italic;color:var(--green-mid)}
+.hero-sub{font-size:1.1rem;color:var(--muted);max-width:480px;margin-bottom:2.5rem;font-weight:300;line-height:1.7}
+.hero-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.btn-primary{background:var(--green);color:var(--white);text-decoration:none;padding:.85rem 2rem;border-radius:100px;font-weight:500;font-size:.95rem;transition:background .2s,transform .1s;display:inline-block}
+.btn-primary:hover{background:var(--green-mid);transform:translateY(-1px)}
+.btn-secondary{color:var(--green);text-decoration:none;font-weight:500;font-size:.95rem;display:inline-flex;align-items:center;gap:6px;transition:gap .2s}
+.btn-secondary:hover{gap:10px}
+.btn-secondary::after{content:'→'}
+.hero-visual{position:absolute;right:0;top:50%;transform:translateY(-50%);width:400px;display:flex;flex-direction:column;gap:12px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem}
+.stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;background:var(--green-light)}
+.stat-label{font-size:.78rem;color:var(--muted);margin-bottom:2px}
+.stat-value{font-size:1.3rem;font-weight:500}
+.match-card{background:var(--green);color:var(--white);border-radius:16px;padding:1.25rem 1.5rem}
+.match-label{font-size:.78rem;opacity:.7;margin-bottom:4px}
+.match-title{font-size:1rem;font-weight:500;margin-bottom:8px}
+.match-meta{font-size:.8rem;opacity:.7}
+.match-pill{display:inline-block;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:100px;font-size:.75rem;margin-top:8px}
+.visual-note{font-size:.72rem;color:var(--muted);text-align:center;font-weight:300}
+.divider{border:none;border-top:1px solid var(--border);margin:0 2rem}
+.section{padding:6rem 2rem;max-width:1100px;margin:0 auto}
+.section-label{font-size:.78rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--green-mid);margin-bottom:1rem}
+h2{font-family:'DM Serif Display',serif;font-size:clamp(2rem,4vw,3rem);letter-spacing:-.03em;line-height:1.1;margin-bottom:1rem}
+.section-sub{font-size:1.05rem;color:var(--muted);max-width:520px;font-weight:300;margin-bottom:3.5rem;line-height:1.7}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2rem}
+.step-num{font-family:'DM Serif Display',serif;font-size:3.5rem;color:#8ECFAA;line-height:1;margin-bottom:1rem;letter-spacing:-.04em}
+.step h3{font-size:1.05rem;font-weight:500;margin-bottom:.5rem}
+.step p{font-size:.9rem;color:var(--muted);line-height:1.6;font-weight:300}
+.impact-banner{background:var(--green);color:var(--white);padding:4rem 2rem}
+.impact-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem;align-items:center}
+.impact-stat{text-align:center}
+.impact-num{font-family:'DM Serif Display',serif;font-size:3rem;letter-spacing:-.04em;margin-bottom:.25rem}
+.impact-label{font-size:.85rem;opacity:.7;font-weight:300}
+.impact-divider{width:1px;height:80px;background:rgba(255,255,255,.2);margin:0 auto}
+.signup-section{padding:6rem 2rem;max-width:780px;margin:0 auto}
+.form-card{background:var(--white);border:1px solid var(--border);border-radius:24px;padding:3rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+label{font-size:.82rem;font-weight:500;color:var(--text)}
+input,select,textarea{font-family:'DM Sans',sans-serif;font-size:.92rem;padding:.7rem 1rem;border:1px solid var(--border);border-radius:10px;background:var(--cream);color:var(--text);transition:border-color .2s,background .2s;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--green-mid);background:var(--white)}
+textarea{resize:vertical;min-height:90px}
+.form-submit{width:100%;background:var(--green);color:var(--white);border:none;padding:1rem;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;cursor:pointer;transition:background .2s;margin-top:.5rem}
+.form-submit:hover{background:var(--green-mid)}
+.form-note{font-size:.78rem;color:var(--muted);text-align:center;margin-top:1rem;font-weight:300}
+.success-msg{display:none;text-align:center;padding:2rem}
+.success-icon{width:60px;height:60px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:1.5rem}
+.success-msg h3{font-family:'DM Serif Display',serif;font-size:1.6rem;margin-bottom:.5rem;letter-spacing:-.02em}
+.success-msg p{color:var(--muted);font-size:.9rem;font-weight:300}
+.login-banner{background:var(--green-pale);border-top:1px solid var(--border);padding:1rem 2rem;text-align:center;font-size:.85rem;color:var(--muted)}
+.login-banner a{color:var(--green);font-weight:500;text-decoration:none}
+footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto;flex-wrap:wrap;gap:1rem}
+.footer-logo{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--green);text-decoration:none}
+.footer-links{display:flex;gap:1.5rem;list-style:none}
+.footer-links a{font-size:.82rem;color:var(--muted);text-decoration:none}
+.footer-links a:hover{color:var(--green)}
+.footer-copy{font-size:.78rem;color:var(--muted);font-weight:300}
+@media(max-width:900px){.hero-visual{display:none}.hero-content{max-width:100%}.impact-inner{grid-template-columns:1fr;gap:1.5rem}.impact-divider{width:80px;height:1px}nav .nav-links{display:none}}
+@media(max-width:600px){.form-card{padding:1.75rem}.form-grid{grid-template-columns:1fr}h1{font-size:2.4rem}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo">Plenty<span>Left</span></a>
+  <ul class="nav-links">
+    <li><a href="#how-it-works">How it works</a></li>
+    <li><a href="#get-started">Get started</a></li>
+    <li><a href="https://plentyleft.github.io/legal" target="_blank">Legal</a></li>
+    <li><a href="#get-started" class="nav-cta">Request access</a></li>
+  </ul>
+</nav>
+
+<div class="hero">
+  <div class="hero-content">
+    <h1>Turn leftovers into<br><em>impact.</em></h1>
+    <p class="hero-sub">Log your catering surplus in seconds. We match it to a nearby nonprofit automatically — and send you an ESG report every month.</p>
+    <div class="hero-actions">
+      <a href="#get-started" class="btn-primary">Request access</a>
+      <a href="#how-it-works" class="btn-secondary">See how it works</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="stat-card">
+      <div class="stat-icon">🥗</div>
+      <div><div class="stat-label">Food redirected this week</div><div class="stat-value">847 lbs</div></div>
+    </div>
+    <div class="match-card">
+      <div class="match-label">New match found</div>
+      <div class="match-title">Office lunch — sandwiches & salads</div>
+      <div class="match-meta">Midtown Manhattan · 2 min ago</div>
+      <div class="match-pill">✓ Matched to City Harvest</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div><div class="stat-label">ESG impact this month</div><div class="stat-value">1,240 meals served</div></div>
+    </div>
+    <p class="visual-note">Sample data — updates with real figures once live</p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<section class="section" id="how-it-works">
+  <div class="section-label">How it works</div>
+  <h2>Three taps.<br>Real impact.</h2>
+  <p class="section-sub">Designed for the office manager, not the sustainability team. Post leftovers in seconds — we handle everything else.</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">01</div><h3>Snap a photo</h3><p>After a catered event, open the app and take a photo of the leftovers. Our AI reads it and fills in the listing automatically — food type, quantity, everything. Zero typing.</p></div>
+    <div class="step"><div class="step-num">02</div><h3>We find a match</h3><p>Our algorithm instantly matches your listing to a nearby nonprofit based on proximity, food preferences, and capacity. No manual searching.</p></div>
+    <div class="step"><div class="step-num">03</div><h3>Nonprofit picks up</h3><p>The matched nonprofit gets a push notification and confirms pickup. You approve with one tap. Both sides confirm completion.</p></div>
+    <div class="step"><div class="step-num">04</div><h3>Get your ESG report</h3><p>Every month we send a detailed impact report — lbs diverted, meals served, CO2 saved — ready to share with clients and partners.</p></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<div class="impact-banner">
+  <div class="impact-inner">
+    <div class="impact-stat"><div class="impact-num">1.3M</div><div class="impact-label">Tons of organic waste NYC generates annually</div></div>
+    <div class="impact-stat"><div class="impact-num">$0</div><div class="impact-label">Cost to nonprofits — always free</div></div>
+    <div class="impact-stat"><div class="impact-num">Quicker</div><div class="impact-label">than throwing it out</div></div>
+  </div>
+</div>
+
+<section class="signup-section" id="get-started">
+  <div style="text-align:center;margin-bottom:2.5rem">
+    <div class="section-label" style="display:inline-block">Get started</div>
+    <h2>Ready to make<br><em style="font-style:italic;color:var(--green-mid)">an impact?</em></h2>
+    <p class="section-sub" style="margin:.75rem auto 0;text-align:center">Fill out the form and we'll be in touch within 24 hours to get you set up.</p>
+  </div>
+  <div class="form-card">
+    <div id="form-content">
+      <form onsubmit="handleSubmit(event)">
+        <div class="form-grid">
+          <div class="form-group"><label>Your name</label><input type="text" id="c-name" placeholder="Jane Smith" required></div>
+          <div class="form-group"><label>Organization name</label><input type="text" id="c-org" placeholder="Smith & Associates LLP" required></div>
+          <div class="form-group"><label>Work email</label><input type="email" id="c-email" placeholder="jane@smithlaw.com" required></div>
+          <div class="form-group"><label>Phone <span style="font-weight:300;color:var(--muted)">(optional)</span></label><input type="tel" id="c-phone" placeholder="(212) 555-0100"></div>
+          <div class="form-group"><label>Organization type</label>
+            <select id="c-type" required><option value="" disabled selected>Select type</option><option>Law firm</option><option>Bank / financial services</option><option>Consulting / advisory</option><option>Tech company</option><option>Other</option></select>
+          </div>
+          <div class="form-group"><label>Office size</label>
+            <select id="c-size"><option value="" disabled selected>Number of people</option><option>Under 20</option><option>20 – 50</option><option>50 – 100</option><option>100+</option></select>
+          </div>
+          <div class="form-group full"><label>How often does your office cater?</label>
+            <select id="c-freq"><option value="" disabled selected>Select frequency</option><option>Daily</option><option>A few times a week</option><option>Weekly</option><option>A few times a month</option><option>Rarely / not sure</option></select>
+          </div>
+          <div class="form-group full"><label>Anything else? <span style="font-weight:300;color:var(--muted)">(optional)</span></label><textarea id="c-notes" placeholder="ESG requirements, specific nonprofits you'd like to work with, questions..."></textarea></div>
+        </div>
+        <button type="submit" class="form-submit">Request access →</button>
+        <p class="form-note">No payment required to sign up. We'll reach out personally to get you started.</p>
+      </form>
+    </div>
+    <div class="success-msg" id="success">
+      <div class="success-icon">✓</div>
+      <h3>You're on the list.</h3>
+      <p>We'll be in touch within 24 hours to get PlentyLeft set up for your office.<br>Download the app to explore in the meantime.</p>
+      <br><a href="#" class="btn-primary" style="display:inline-block">Download on the App Store</a>
+    </div>
+  </div>
+</section>
+
+<div class="login-banner">Already a member? <a href="#">Log in to the app →</a></div>
+
+<footer>
+  <a href="/" class="footer-logo">PlentyLeft</a>
+  <ul class="footer-links">
+    <li><a href="https://plentyleft.github.io/legal" target="_blank">Privacy policy</a></li>
+    <li><a href="https://plentyleft.github.io/legal" target="_blank">Terms of service</a></li>
+    <li><a href="mailto:plentyleftapp@gmail.com">Contact</a></li>
+  </ul>
+  <span class="footer-copy">© 2026 PlentyLeft. All rights reserved.</span>
+</footer>
+
+<script>
+function handleSubmit(e) {
+  e.preventDefault();
+  const name=document.getElementById('c-name').value, org=document.getElementById('c-org').value,
+        email=document.getElementById('c-email').value, phone=document.getElementById('c-phone').value,
+        type=document.getElementById('c-type').value, size=document.getElementById('c-size').value,
+        freq=document.getElementById('c-freq').value, notes=document.getElementById('c-notes').value;
+  const subject=encodeURIComponent('PlentyLeft corporate signup — '+org);
+  const body=encodeURIComponent('CORPORATE SIGNUP\n\nName: '+name+'\nOrg: '+org+'\nEmail: '+email+'\nPhone: '+phone+'\nType: '+type+'\nSize: '+size+'\nCatering freq: '+freq+'\nNotes: '+notes);
+  window.location.href='mailto:hak.hak.ny@gmail.com?subject='+subject+'&body='+body;
+  document.getElementById('form-content').style.display='none';
+  document.getElementById('success').style.display='block';
+}
+</script>
+</body>
+</html>

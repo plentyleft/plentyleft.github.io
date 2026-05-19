@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlentyLeft for Nonprofits — Free Food, Delivered to You</title><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#1C5C38;--green-mid:#2E7D52;--green-light:#E8F5EE;--green-pale:#F4FAF6;--cream:#FAF8F3;--amber:#C8860A;--amber-light:#FDF3DC;--text:#1A1A18;--muted:#5C6058;--border:#D8DDD4;--white:#FFFFFF}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);line-height:1.6;font-size:16px}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(250,248,243,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--green);text-decoration:none;letter-spacing:-0.02em}
+.nav-logo span{color:var(--amber)}
+.nav-links{display:flex;align-items:center;gap:2rem;list-style:none}
+.nav-links a{text-decoration:none;color:var(--muted);font-size:.9rem;transition:color .2s}
+.nav-links a:hover{color:var(--amber)}
+.nav-cta{background:var(--amber)!important;color:var(--white)!important;padding:.5rem 1.25rem!important;border-radius:100px;font-weight:500!important}
+.hero{min-height:100vh;display:flex;align-items:center;padding:8rem 2rem 5rem;max-width:1200px;margin:0 auto;position:relative}
+.hero-content{max-width:620px}
+h1{font-family:'DM Serif Display',serif;font-size:clamp(2.6rem,5.5vw,4.2rem);line-height:1.08;letter-spacing:-.03em;margin-bottom:1.25rem}
+h1 em{font-style:italic;color:var(--amber)}
+.hero-sub{font-size:1.1rem;color:var(--muted);max-width:480px;margin-bottom:2.5rem;font-weight:300;line-height:1.7}
+.hero-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.btn-primary{background:var(--amber);color:var(--white);text-decoration:none;padding:.85rem 2rem;border-radius:100px;font-weight:500;font-size:.95rem;transition:background .2s,transform .1s;display:inline-block}
+.btn-primary:hover{background:#a06e08;transform:translateY(-1px)}
+.btn-secondary{color:var(--amber);text-decoration:none;font-weight:500;font-size:.95rem;display:inline-flex;align-items:center;gap:6px;transition:gap .2s}
+.btn-secondary:hover{gap:10px}
+.btn-secondary::after{content:'→'}
+.hero-visual{position:absolute;right:0;top:50%;transform:translateY(-50%);width:400px;display:flex;flex-direction:column;gap:12px}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem}
+.stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;background:var(--amber-light)}
+.stat-label{font-size:.78rem;color:var(--muted);margin-bottom:2px}
+.stat-value{font-size:1.3rem;font-weight:500}
+.match-card{background:var(--amber);color:var(--white);border-radius:16px;padding:1.25rem 1.5rem}
+.match-label{font-size:.78rem;opacity:.7;margin-bottom:4px}
+.match-title{font-size:1rem;font-weight:500;margin-bottom:8px}
+.match-meta{font-size:.8rem;opacity:.7}
+.match-pill{display:inline-block;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:100px;font-size:.75rem;margin-top:8px}
+.visual-note{font-size:.72rem;color:var(--muted);text-align:center;font-weight:300}
+.divider{border:none;border-top:1px solid var(--border);margin:0 2rem}
+.section{padding:6rem 2rem;max-width:1100px;margin:0 auto}
+.section-label{font-size:.78rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin-bottom:1rem}
+h2{font-family:'DM Serif Display',serif;font-size:clamp(2rem,4vw,3rem);letter-spacing:-.03em;line-height:1.1;margin-bottom:1rem}
+.section-sub{font-size:1.05rem;color:var(--muted);max-width:520px;font-weight:300;margin-bottom:3.5rem;line-height:1.7}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2rem}
+.step-num{font-family:'DM Serif Display',serif;font-size:3.5rem;color:#F0C060;line-height:1;margin-bottom:1rem;letter-spacing:-.04em}
+.step h3{font-size:1.05rem;font-weight:500;margin-bottom:.5rem}
+.step p{font-size:.9rem;color:var(--muted);line-height:1.6;font-weight:300}
+.impact-banner{background:var(--amber);color:var(--white);padding:4rem 2rem}
+.impact-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr;gap:2rem;align-items:center}
+.impact-stat{text-align:center}
+.impact-num{font-family:'DM Serif Display',serif;font-size:3rem;letter-spacing:-.04em;margin-bottom:.25rem}
+.impact-label{font-size:.85rem;opacity:.7;font-weight:300}
+.impact-divider{width:1px;height:80px;background:rgba(255,255,255,.2);margin:0 auto}
+.signup-section{padding:6rem 2rem;max-width:780px;margin:0 auto}
+.form-card{background:var(--white);border:1px solid var(--border);border-radius:24px;padding:3rem}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+label{font-size:.82rem;font-weight:500;color:var(--text)}
+input,select,textarea{font-family:'DM Sans',sans-serif;font-size:.92rem;padding:.7rem 1rem;border:1px solid var(--border);border-radius:10px;background:var(--cream);color:var(--text);transition:border-color .2s,background .2s;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--amber);background:var(--white)}
+textarea{resize:vertical;min-height:90px}
+.form-submit{width:100%;background:var(--amber);color:var(--white);border:none;padding:1rem;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;cursor:pointer;transition:background .2s;margin-top:.5rem}
+.form-submit:hover{background:#a06e08}
+.form-note{font-size:.78rem;color:var(--muted);text-align:center;margin-top:1rem;font-weight:300}
+.success-msg{display:none;text-align:center;padding:2rem}
+.success-icon{width:60px;height:60px;background:var(--amber-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:1.5rem}
+.success-msg h3{font-family:'DM Serif Display',serif;font-size:1.6rem;margin-bottom:.5rem;letter-spacing:-.02em}
+.success-msg p{color:var(--muted);font-size:.9rem;font-weight:300}
+.login-banner{background:var(--green-pale);border-top:1px solid var(--border);padding:1rem 2rem;text-align:center;font-size:.85rem;color:var(--muted)}
+.login-banner a{color:var(--amber);font-weight:500;text-decoration:none}
+footer{border-top:1px solid var(--border);padding:2.5rem 2rem;display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto;flex-wrap:wrap;gap:1rem}
+.footer-logo{font-family:'DM Serif Display',serif;font-size:1.1rem;color:var(--green);text-decoration:none}
+.footer-links{display:flex;gap:1.5rem;list-style:none}
+.footer-links a{font-size:.82rem;color:var(--muted);text-decoration:none}
+.footer-links a:hover{color:var(--amber)}
+.footer-copy{font-size:.78rem;color:var(--muted);font-weight:300}
+@media(max-width:900px){.hero-visual{display:none}.hero-content{max-width:100%}.impact-inner{grid-template-columns:1fr;gap:1.5rem}.impact-divider{width:80px;height:1px}nav .nav-links{display:none}}
+@media(max-width:600px){.form-card{padding:1.75rem}.form-grid{grid-template-columns:1fr}h1{font-size:2.4rem}}
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-logo">Plenty<span>Left</span></a>
+  <ul class="nav-links">
+    <li><a href="#how-it-works">How it works</a></li>
+    <li><a href="#get-started">Register</a></li>
+    <li><a href="https://plentyleft.github.io/legal" target="_blank">Legal</a></li>
+    <li><a href="#get-started" class="nav-cta">Register free</a></li>
+  </ul>
+</nav>
+
+<div class="hero">
+  <div class="hero-content">
+    <h1>Fresh food,<br><em>ready for pickup.</em></h1>
+    <p class="hero-sub">Get notified when surplus catering food is available near you — for free. No chasing down donors, no uncertainty. Just food that needs a home.</p>
+    <div class="hero-actions">
+      <a href="#get-started" class="btn-primary">Register your org</a>
+      <a href="#how-it-works" class="btn-secondary">See how it works</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="stat-card">
+      <div class="stat-icon">📍</div>
+      <div><div class="stat-label">Available near you</div><div class="stat-value">3 listings today</div></div>
+    </div>
+    <div class="match-card">
+      <div class="match-label">New listing in your area</div>
+      <div class="match-title">Catered lunch — 40 servings</div>
+      <div class="match-meta">0.4 miles away · Midtown Manhattan</div>
+      <div class="match-pill">Pickup window: 2:00 – 4:00 PM</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🍽️</div>
+      <div><div class="stat-label">Meals served this month</div><div class="stat-value">1,240 meals</div></div>
+    </div>
+    <p class="visual-note">Sample data — updates with real figures once live</p>
+  </div>
+</div>
+
+<hr class="divider">
+
+<section class="section" id="how-it-works">
+  <div class="section-label">How it works</div>
+  <h2>Food finds you.<br>You just show up.</h2>
+  <p class="section-sub">Register once, set your preferences, and get notified when food is available nearby. We match listings to your org automatically.</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">01</div><h3>Register your org</h3><p>Tell us about your organization — what food you can accept, how many people you serve, and your pickup radius. Takes five minutes.</p></div>
+    <div class="step"><div class="step-num">02</div><h3>Get matched</h3><p>When a nearby corporate office posts surplus food that fits your preferences, you get a push notification instantly — before anyone else.</p></div>
+    <div class="step"><div class="step-num">03</div><h3>Confirm pickup</h3><p>Accept the listing with one tap. You'll get the pickup address, window, and contact info. Coordinate directly with the office manager.</p></div>
+    <div class="step"><div class="step-num">04</div><h3>Log your impact</h3><p>After pickup, log the meals received. Your impact history builds over time — useful for your own reporting and grant applications.</p></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<div class="impact-banner">
+  <div class="impact-inner">
+    <div class="impact-stat"><div class="impact-num">$0</div><div class="impact-label">Cost to nonprofits — always free</div></div>
+    <div class="impact-stat"><div class="impact-num">Same day</div><div class="impact-label">Most listings available for same-day pickup</div></div>
+    <div class="impact-stat"><div class="impact-num">Fresh</div><div class="impact-label">Corporate catering — not day-old donations</div></div>
+  </div>
+</div>
+
+<section class="signup-section" id="get-started">
+  <div style="text-align:center;margin-bottom:2.5rem">
+    <div class="section-label" style="display:inline-block">Register</div>
+    <h2>Start receiving<br><em style="font-style:italic;color:var(--amber)">food today.</em></h2>
+    <p class="section-sub" style="margin:.75rem auto 0;text-align:center">Register your organization — always free for nonprofits. We'll be in touch within 24 hours.</p>
+  </div>
+  <div class="form-card">
+    <div id="form-content">
+      <form onsubmit="handleSubmit(event)">
+        <div class="form-grid">
+          <div class="form-group"><label>Your name</label><input type="text" id="n-name" placeholder="Marcus Johnson" required></div>
+          <div class="form-group"><label>Organization name</label><input type="text" id="n-org" placeholder="Community Kitchen NYC" required></div>
+          <div class="form-group"><label>Email</label><input type="email" id="n-email" placeholder="marcus@communitykitchen.org" required></div>
+          <div class="form-group"><label>Phone <span style="font-weight:300;color:var(--muted)">(optional)</span></label><input type="tel" id="n-phone" placeholder="(212) 555-0100"></div>
+          <div class="form-group"><label>People served per week</label>
+            <select id="n-size"><option value="" disabled selected>Approximate number</option><option>Under 50</option><option>50 – 200</option><option>200 – 500</option><option>500+</option></select>
+          </div>
+          <div class="form-group"><label>Pickup radius</label>
+            <select id="n-radius"><option value="" disabled selected>How far can you travel?</option><option>Within 0.5 miles</option><option>Within 1 mile</option><option>Within 2 miles</option><option>Within 5 miles</option></select>
+          </div>
+          <div class="form-group full"><label>Food preferences / restrictions <span style="font-weight:300;color:var(--muted)">(optional)</span></label><textarea id="n-notes" placeholder="e.g. we can't accept shellfish, we have cold storage, we prefer vegetarian..."></textarea></div>
+        </div>
+        <button type="submit" class="form-submit">Register our organization →</button>
+        <p class="form-note">Free forever for nonprofits. We'll verify your organization and get you set up within 24 hours.</p>
+      </form>
+    </div>
+    <div class="success-msg" id="success">
+      <div class="success-icon">✓</div>
+      <h3>You're registered.</h3>
+      <p>We'll verify your organization and be in touch within 24 hours.<br>Download the app to get ready for your first match.</p>
+      <br><a href="#" class="btn-primary" style="display:inline-block">Download on the App Store</a>
+    </div>
+  </div>
+</section>
+
+<div class="login-banner">Already a member? <a href="#">Log in to the app →</a></div>
+
+<footer>
+  <a href="/" class="footer-logo">PlentyLeft</a>
+  <ul class="footer-links">
+    <li><a href="https://plentyleft.github.io/legal" target="_blank">Privacy policy</a></li>
+    <li><a href="https://plentyleft.github.io/legal" target="_blank">Terms of service</a></li>
+    <li><a href="mailto:plentyleftapp@gmail.com">Contact</a></li>
+  </ul>
+  <span class="footer-copy">© 2026 PlentyLeft. All rights reserved.</span>
+</footer>
+
+<script>
+function handleSubmit(e) {
+  e.preventDefault();
+  const name=document.getElementById('n-name').value, org=document.getElementById('n-org').value,
+        email=document.getElementById('n-email').value, phone=document.getElementById('n-phone').value,
+        size=document.getElementById('n-size').value, radius=document.getElementById('n-radius').value,
+        notes=document.getElementById('n-notes').value;
+  const subject=encodeURIComponent('PlentyLeft nonprofit signup — '+org);
+  const body=encodeURIComponent('NONPROFIT SIGNUP\n\nName: '+name+'\nOrg: '+org+'\nEmail: '+email+'\nPhone: '+phone+'\nPeople served: '+size+'\nPickup radius: '+radius+'\nNotes: '+notes);
+  window.location.href='mailto:hak.hak.ny@gmail.com?subject='+subject+'&body='+body;
+  document.getElementById('form-content').style.display='none';
+  document.getElementById('success').style.display='block';
+}
+</script>
+</body>
+</html>
