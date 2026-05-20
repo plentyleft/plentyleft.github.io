@@ -3,12 +3,21 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   SafeAreaView, ActivityIndicator, Alert
 } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 
+const GREEN = "#1C5C38";
+const AMBER = "#C8860A";
+const DARK = "#111827";
+
 export default function OnboardingScreen() {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const preview = (route.params as { preview?: boolean } | undefined)?.preview ?? false;
   const [loading, setLoading] = useState(false);
 
   const handleSelectRole = async (role: "admin" | "nonprofit") => {
+    if (preview) return;
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -29,11 +38,21 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {preview && (
+        <View style={styles.previewHeader}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
+            <Text style={styles.previewBack}>← Back</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <View style={styles.content}>
         <Text style={styles.emoji}>🌱</Text>
-        <Text style={styles.title}>Welcome to plentyleft</Text>
+        <Text style={styles.title}>
+          Welcome to <Text style={styles.titlePlenty}>Plenty</Text>
+          <Text style={styles.titleLeft}>Left</Text>
+        </Text>
         <Text style={styles.subtitle}>Surplus food, redistributed.</Text>
-        <Text style={styles.question}>How will you use plentyleft?</Text>
+        <Text style={styles.question}>How will you use PlentyLeft?</Text>
 
         <TouchableOpacity
           style={styles.card}
@@ -69,7 +88,11 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 16, textAlign: "center", color: "#666", marginBottom: 40 },
   question: { fontSize: 18, fontWeight: "600", color: "#1a1a1a", marginBottom: 16, textAlign: "center" },
   card: { backgroundColor: "#fff", borderRadius: 16, padding: 20, marginBottom: 16, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8, elevation: 2, borderWidth: 2, borderColor: "#eee" },
-  cardGreen: { borderColor: "#2ecc71" },
+  cardGreen: { borderColor: GREEN },
+  previewHeader: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 },
+  previewBack: { fontSize: 16, color: GREEN, fontWeight: "600" },
+  titlePlenty: { color: DARK },
+  titleLeft: { color: AMBER },
   cardEmoji: { fontSize: 32, marginBottom: 8 },
   cardTitle: { fontSize: 18, fontWeight: "700", color: "#1a1a1a", marginBottom: 6 },
   cardDesc: { fontSize: 14, color: "#666", lineHeight: 20 },

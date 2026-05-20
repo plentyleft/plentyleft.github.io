@@ -1,140 +1,111 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
-  View, Text, FlatList, StyleSheet,
-  TouchableOpacity, RefreshControl, SafeAreaView, Alert, ActivityIndicator
+  View, Text, StyleSheet, FlatList, TouchableOpacity,
+  ActivityIndicator, Alert, RefreshControl, SafeAreaView,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
-import { sendPushNotification } from "../lib/notifications";
+import { formatLbs } from "../lib/units";
 import ImpactScreen from "./ImpactScreen";
 
-function formatPickup(start: string, end: string) {
-  if (!start || !end) return "No pickup time set";
-  const s = new Date(start);
-  const e = new Date(end);
-  const dateStr = s.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const startTime = s.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  const endTime = e.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  return `${dateStr}, ${startTime} – ${endTime}`;
+interface Match {
+  id: string;
+  listings_id: string;
+  status: string;
+  match_score: number;
+  matched_at: string;
+  listing: {
+    title: string;
+    food_types: string[];
+    quantity_kg: number;
+    serves_approx: number;
+    pickup_address: string;
+    pickup_start: string;
+    pickup_end: string;
+    notes: string;
+    dietary_flags: string[];
+  };
 }
 
 export default function NonprofitHomeScreen() {
-  const [activeTab, setActiveTab] = useState<"available" | "claims" | "impact">("available");
-  const [listings, setListings] = useState([]);
-  const [myClaims, setMyClaims] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [claiming, setClaiming] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const navigation = useNavigation();
+  const [activeTab, setActiveTab] = useState<"food" | "impact">("food");
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [accepting, setAccepting] = useState<string | null>(null);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (user) {
-        const { data } = await supabase
-          .from("users")
-          .select("organization_id")
-          .eq("id", user.id)
-          .maybeSingle();
-        setOrgId(data?.organization_id || null);
-      }
-    });
-    fetchListings();
+  const fetchMatches = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: userData } = await supabase
+      .from("users").select("organization_id").eq("id", user.id).maybeSingle();
+    if (!userData?.organization_id) return;
+    setOrgId(userData.organization_id);
+    const { data, error } = await supabase
+      .from("matches")
+      .select(`id, listings_id, status, match_score, matched_at,
+        listing:listings(title, food_types, quantity_kg, serves_approx,
+          pickup_address, pickup_start, pickup_end, notes, dietary_flags)`)
+      .eq("nonprofit_id", userData.organization_id)
+      .in("status", ["pending", "accepted"])
+      .order("matched_at", { ascending: false });
+    if (error) { Alert.alert("Error", error.message); return; }
+    setMatches((data as any) || []);
   }, []);
 
   useEffect(() => {
-    if (activeTab === "claims" && orgId) fetchMyClaims();
-  }, [activeTab, orgId]);
+    fetchMatches().finally(() => setLoading(false));
+  }, []);
 
-  const fetchListings = async () => {
-    const { data, error } = await supabase
-      .from("listings")
-      .select("*")
-      .eq("status", "open")
-      .order("created_at", { ascending: false });
-    if (!error) setListings(data || []);
-    setLoading(false);
-  };
-
-  const fetchMyClaims = async () => {
-    if (!orgId) return;
-    const { data, error } = await supabase
-      .from("matches")
-      .select("*, listings(*)")
-      .eq("nonprofit_id", orgId)
-      .order("matched_at", { ascending: false });
-    if (!error) setMyClaims(data || []);
-  };
-
-  const onRefresh = useCallback(async () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    if (activeTab === "available") await fetchListings();
-    else await fetchMyClaims();
+    await fetchMatches();
     setRefreshing(false);
-  }, [activeTab, orgId]);
-
-  const handleClaim = async (listing: any) => {
-    if (!orgId) {
-      Alert.alert("Error", "Your account is not linked to an organization.");
-      return;
-    }
-    setClaiming(listing.id);
-    try {
-      const { error: matchError } = await supabase
-        .from("matches")
-        .insert({
-          listings_id: listing.id,
-          nonprofit_id: orgId,
-          status: "pending",
-          matched_at: new Date().toISOString(),
-        });
-      if (matchError) throw matchError;
-      const { error: updateError } = await supabase
-        .from("listings")
-        .update({ status: "matched" })
-        .eq("id", listing.id);
-      if (updateError) throw updateError;
-      // Notify corp
-      const { data: corpUser } = await supabase
-        .from("users")
-        .select("push_token")
-        .eq("organization_id", listing.organization_id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (corpUser?.push_token) {
-        await sendPushNotification(corpUser.push_token, "Donation Claimed! 🎉", `Your listing "${listing.title}" has been claimed by a nonprofit.`);
-      }
-      Alert.alert("Claimed!", "You\'ve claimed this donation. The corp will be notified to confirm pickup.");
-      fetchListings();
-    } catch (err: any) {
-      Alert.alert("Error", err.message || "Something went wrong.");
-    } finally {
-      setClaiming(null);
-    }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
+  const acceptMatch = async (matchId: string) => {
+    setAccepting(matchId);
+    const { error } = await supabase
+      .from("matches").update({ status: "accepted" }).eq("id", matchId);
+    if (error) { Alert.alert("Error", error.message); }
+    else {
+      setMatches(prev => prev.map(m => m.id === matchId ? { ...m, status: "accepted" } : m));
+      Alert.alert("Accepted", "The food pickup has been confirmed. The donor will be notified.");
+    }
+    setAccepting(null);
   };
+
+  const formatTime = (iso: string) => {
+    if (!iso) return "TBD";
+    return new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}><ActivityIndicator size="large" color={GREEN} /></View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>plentyleft</Text>
-        <TouchableOpacity onPress={handleSignOut}>
-          <Text style={styles.signOut}>Sign Out</Text>
+        <Text style={styles.brand}>
+          <Text style={styles.brandPlenty}>Plenty</Text>
+          <Text style={styles.brandLeft}>Left</Text>
+        </Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Settings" as never)} hitSlop={8}>
+          <Text style={styles.accountLink}>Account</Text>
         </TouchableOpacity>
       </View>
+
       <View style={styles.tabs}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === "available" && styles.tabActive]}
-          onPress={() => setActiveTab("available")}
+          style={[styles.tab, activeTab === "food" && styles.tabActive]}
+          onPress={() => setActiveTab("food")}
         >
-          <Text style={[styles.tabText, activeTab === "available" && styles.tabTextActive]}>Available</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === "claims" && styles.tabActive]}
-          onPress={() => setActiveTab("claims")}
-        >
-          <Text style={[styles.tabText, activeTab === "claims" && styles.tabTextActive]}>My Claims</Text>
+          <Text style={[styles.tabText, activeTab === "food" && styles.tabTextActive]}>Available food</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === "impact" && styles.tabActive]}
@@ -143,52 +114,60 @@ export default function NonprofitHomeScreen() {
           <Text style={[styles.tabText, activeTab === "impact" && styles.tabTextActive]}>Impact</Text>
         </TouchableOpacity>
       </View>
-      {activeTab === "claims" ? (
-        <FlatList
-          data={myClaims}
-          keyExtractor={(item) => item.id}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={<Text style={styles.empty}>No claims yet.</Text>}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{item.listings?.title}</Text>
-              <Text style={styles.cardMeta}>📍 {item.listings?.pickup_address || "No address"}</Text>
-              {item.listings?.pickup_start ? <Text style={styles.cardMeta}>🕐 {formatPickup(item.listings.pickup_start, item.listings.pickup_end)}</Text> : null}
-              {item.listings?.quantity_kg ? <Text style={styles.cardMeta}>⚖️ {item.listings.quantity_kg} kg</Text> : null}
-              {item.listings?.serves_approx ? <Text style={styles.cardMeta}>👥 Serves ~{item.listings.serves_approx}</Text> : null}
-              <View style={[styles.statusBadge, { backgroundColor: item.status === "accepted" ? "#e8f8f0" : "#fff9e6" }]}>
-                <Text style={[styles.statusText, { color: item.status === "accepted" ? "#27ae60" : "#f39c12" }]}>
-                  {item.status === "accepted" ? "✅ Pickup Confirmed" : "⏳ Pending Confirmation"}
-                </Text>
-              </View>
-            </View>
-          )}
-        />
-      ) : activeTab === "impact" ? (
-        <ImpactScreen orgId={orgId} />
+
+      {activeTab === "impact" ? (
+        <ImpactScreen orgId={orgId} role="nonprofit" />
+      ) : matches.length === 0 ? (
+        <View style={styles.center}>
+          <Text style={styles.emptyIcon}>🌱</Text>
+          <Text style={styles.emptyTitle}>No matches yet</Text>
+          <Text style={styles.emptyText}>When food is matched to your organization, it will appear here.</Text>
+        </View>
       ) : (
         <FlatList
-          data={listings}
-          keyExtractor={(item) => item.id}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={loading ? <ActivityIndicator style={{marginTop:60}} color="#2ecc71" size="large" /> : <Text style={styles.empty}>No listings available yet.</Text>}
+          data={matches}
+          keyExtractor={(m) => m.id}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} />}
+          contentContainerStyle={{ padding: 16, gap: 16 }}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-              {item.notes ? <Text style={styles.cardDesc}>{item.notes}</Text> : null}
-              <Text style={styles.cardMeta}>📍 {item.pickup_address || "Address not set"}</Text>
-              <Text style={styles.cardMeta}>🕐 {formatPickup(item.pickup_start, item.pickup_end)}</Text>
-              {item.quantity_kg ? <Text style={styles.cardMeta}>⚖️ {item.quantity_kg} kg</Text> : null}
-              {item.serves_approx ? <Text style={styles.cardMeta}>👥 Serves ~{item.serves_approx}</Text> : null}
-              <TouchableOpacity
-                style={[styles.claimBtn, claiming === item.id && styles.claimBtnDisabled]}
-                onPress={() => handleClaim(item)}
-                disabled={claiming === item.id}
-              >
-                <Text style={styles.claimBtnText}>
-                  {claiming === item.id ? "Claiming..." : "Claim Donation"}
-                </Text>
-              </TouchableOpacity>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>{item.listing?.title || "Food listing"}</Text>
+                <View style={[styles.badge, item.status === "accepted" ? styles.badgeAccepted : styles.badgePending]}>
+                  <Text style={[styles.badgeText, item.status === "accepted" ? styles.badgeTextAccepted : styles.badgeTextPending]}>
+                    {item.status === "accepted" ? "Accepted" : "New match"}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.row}>
+                <Text style={styles.stat}>{formatLbs(item.listing?.quantity_kg)}</Text>
+                <Text style={styles.stat}>Feeds ~{item.listing?.serves_approx}</Text>
+              </View>
+              {item.listing?.food_types?.length > 0 && (
+                <View style={styles.chips}>
+                  {item.listing.food_types.map((t: string) => (
+                    <View key={t} style={styles.chip}><Text style={styles.chipText}>{t}</Text></View>
+                  ))}
+                </View>
+              )}
+              {item.listing?.dietary_flags?.length > 0 && (
+                <Text style={styles.dietary}>{item.listing.dietary_flags.join(", ")}</Text>
+              )}
+              <View style={styles.divider} />
+              <Text style={styles.label}>{item.listing?.pickup_address || "Address TBD"}</Text>
+              <Text style={styles.label}>{formatTime(item.listing?.pickup_start)} - {formatTime(item.listing?.pickup_end)}</Text>
+              {item.listing?.notes ? <Text style={styles.notes}>{item.listing.notes}</Text> : null}
+              {item.status === "pending" && (
+                <TouchableOpacity
+                  style={[styles.acceptBtn, accepting === item.id && styles.acceptBtnDisabled]}
+                  onPress={() => acceptMatch(item.id)}
+                  disabled={accepting === item.id}
+                >
+                  {accepting === item.id
+                    ? <ActivityIndicator color="#fff" />
+                    : <Text style={styles.acceptBtnText}>Accept pickup</Text>}
+                </TouchableOpacity>
+              )}
             </View>
           )}
         />
@@ -197,24 +176,55 @@ export default function NonprofitHomeScreen() {
   );
 }
 
+const GREEN = "#1C5C38";
+const AMBER = "#C8860A";
+const DARK = "#111827";
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9f9f9" },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#eee" },
-  title: { fontSize: 20, fontWeight: "700", color: "#1a1a1a" },
-  signOut: { fontSize: 14, color: "#e74c3c" },
+  container: { flex: 1, backgroundColor: "#f9fafb" },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  brand: { fontSize: 20, fontWeight: "700" },
+  accountLink: { fontSize: 14, color: GREEN, fontWeight: "600" },
+  brandPlenty: { color: DARK },
+  brandLeft: { color: AMBER },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
   tabs: { flexDirection: "row", backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#eee" },
   tab: { flex: 1, paddingVertical: 12, alignItems: "center" },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: "#2ecc71" },
-  tabText: { fontSize: 15, color: "#999", fontWeight: "500" },
-  tabTextActive: { color: "#1a1a1a", fontWeight: "700" },
-  empty: { textAlign: "center", marginTop: 60, color: "#999", fontSize: 16 },
-  card: { backgroundColor: "#fff", margin: 12, borderRadius: 12, padding: 16, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
-  cardTitle: { fontSize: 17, fontWeight: "600", marginBottom: 6 },
-  cardDesc: { fontSize: 14, color: "#555", marginBottom: 8 },
-  cardMeta: { fontSize: 13, color: "#666", marginTop: 4 },
-  statusBadge: { marginTop: 10, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 10, alignSelf: "flex-start" },
-  statusText: { fontSize: 13, fontWeight: "500" },
-  claimBtn: { marginTop: 14, backgroundColor: "#2ecc71", borderRadius: 8, paddingVertical: 10, alignItems: "center" },
-  claimBtnDisabled: { backgroundColor: "#a0a0a0" },
-  claimBtnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: AMBER },
+  tabText: { fontSize: 14, color: "#999", fontWeight: "500" },
+  tabTextActive: { color: DARK, fontWeight: "700" },
+  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyTitle: { fontSize: 20, fontWeight: "700", color: "#111", marginBottom: 8 },
+  emptyText: { fontSize: 15, color: "#666", textAlign: "center" },
+  card: { backgroundColor: "#fff", borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
+  cardTitle: { fontSize: 17, fontWeight: "700", color: "#111", flex: 1, marginRight: 8 },
+  badge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  badgePending: { backgroundColor: "#FDF6E8" },
+  badgeAccepted: { backgroundColor: "#E8F5EE" },
+  badgeText: { fontSize: 12, fontWeight: "600" },
+  badgeTextPending: { color: AMBER },
+  badgeTextAccepted: { color: GREEN },
+  row: { flexDirection: "row", gap: 16, marginBottom: 8 },
+  stat: { fontSize: 14, color: "#444" },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 },
+  chip: { backgroundColor: "#F3F4F6", borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  chipText: { fontSize: 12, color: "#555" },
+  dietary: { fontSize: 13, color: "#555", marginBottom: 8 },
+  divider: { height: 1, backgroundColor: "#F3F4F6", marginVertical: 10 },
+  label: { fontSize: 14, color: "#444", marginBottom: 4 },
+  notes: { fontSize: 13, color: "#888", marginTop: 4, fontStyle: "italic" },
+  acceptBtn: { backgroundColor: GREEN, borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 12 },
+  acceptBtnDisabled: { opacity: 0.6 },
+  acceptBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });

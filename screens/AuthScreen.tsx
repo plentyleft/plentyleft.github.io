@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform,
+  StyleSheet, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform, Linking,
 } from "react-native";
+import { useFonts, DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import { supabase } from "../lib/supabase";
 
 type Mode = "login" | "signup";
@@ -15,6 +16,8 @@ export default function AuthScreen() {
   const [orgName, setOrgName] = useState("");
   const [orgType, setOrgType] = useState<OrgType>("corporate");
   const [loading, setLoading] = useState(false);
+
+  const [fontsLoaded] = useFonts({ DMSerifDisplay_400Regular });
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -47,7 +50,6 @@ export default function AuthScreen() {
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .insert({
-          
           name: orgName,
           type: orgType,
           is_verified: orgType === "corporate", // corps auto-verified, nonprofits need review
@@ -61,7 +63,7 @@ export default function AuthScreen() {
         id: authData.user.id,
         organization_id: orgData.id,
         email: email,
-        role: "admin",
+        role: orgType === "nonprofit" ? "nonprofit" : "admin",
       });
       if (userError) throw userError;
 
@@ -72,6 +74,8 @@ export default function AuthScreen() {
     }
   };
 
+  if (!fontsLoaded) return null;
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -81,8 +85,11 @@ export default function AuthScreen() {
 
         {/* Logo / brand */}
         <View style={styles.brand}>
-          <Text style={styles.logo}>🌿</Text>
-          <Text style={styles.appName}>plentyleft</Text>
+          <Text style={styles.logo}>🥡  🍽️</Text>
+          <Text style={styles.appName}>
+            <Text style={{ color: DARK }}>Plenty</Text>
+            <Text style={{ color: AMBER }}>Left</Text>
+          </Text>
           <Text style={styles.tagline}>Surplus food, redistributed.</Text>
         </View>
 
@@ -106,19 +113,17 @@ export default function AuthScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Signup-only fields */}
-        {mode === "signup" && (
-          <>
+        {/* Signup: in-app form in dev only; production uses website */}
+        {mode === "signup" && __DEV__ && (
+          <View>
             <Text style={styles.label}>Organization name</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. Acme Corp or Bowery Mission"
+              placeholder="Acme Catering Co."
               value={orgName}
               onChangeText={setOrgName}
-              autoCapitalize="words"
             />
-
-            <Text style={styles.label}>We are a...</Text>
+            <Text style={[styles.label, { marginTop: 20 }]}>Organization type</Text>
             <View style={styles.orgTypeRow}>
               <TouchableOpacity
                 style={[styles.orgTypeBtn, orgType === "corporate" && styles.orgTypeBtnActive]}
@@ -126,9 +131,8 @@ export default function AuthScreen() {
               >
                 <Text style={styles.orgTypeIcon}>🏢</Text>
                 <Text style={[styles.orgTypeBtnText, orgType === "corporate" && styles.orgTypeBtnTextActive]}>
-                  Corporation
+                  Corporate
                 </Text>
-                <Text style={styles.orgTypeDesc}>We have surplus food to share</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.orgTypeBtn, orgType === "nonprofit" && styles.orgTypeBtnActive]}
@@ -138,52 +142,82 @@ export default function AuthScreen() {
                 <Text style={[styles.orgTypeBtnText, orgType === "nonprofit" && styles.orgTypeBtnTextActive]}>
                   Nonprofit
                 </Text>
-                <Text style={styles.orgTypeDesc}>We feed people in need</Text>
               </TouchableOpacity>
             </View>
-          </>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="you@example.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="At least 6 characters"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <TouchableOpacity
+              style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+              onPress={handleSignup}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitBtnText}>Create account →</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+        {mode === "signup" && !__DEV__ && (
+          <View style={styles.webSignupBox}>
+            <Text style={styles.webSignupTitle}>Create your account online</Text>
+            <Text style={styles.webSignupDesc}>Sign up at plentyleft.nyc to get started. It only takes a minute.</Text>
+            <TouchableOpacity style={styles.webSignupBtn} onPress={() => Linking.openURL("https://plentyleft.nyc")}>
+              <Text style={styles.webSignupBtnText}>Go to plentyleft.nyc →</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
-        {/* Email & password */}
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="you@example.com"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder={mode === "signup" ? "At least 6 characters" : "Your password"}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        {/* Submit */}
-        <TouchableOpacity
-          style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
-          onPress={mode === "login" ? handleLogin : handleSignup}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.submitBtnText}>
-              {mode === "login" ? "Log in →" : "Create account →"}
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        {mode === "signup" && (
-          <Text style={styles.disclaimer}>
-            By signing up you agree to our terms of service. Nonprofit accounts are reviewed before activation.
-          </Text>
+        {/* Email & password - only show for login */}
+        {mode === "login" && (
+          <View>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="you@example.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <TouchableOpacity
+              style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitBtnText}>Log in →</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         )}
 
       </ScrollView>
@@ -191,7 +225,8 @@ export default function AuthScreen() {
   );
 }
 
-const GREEN = "#22C55E";
+const GREEN = "#1C5C38";
+const AMBER = "#C8860A";
 const DARK = "#111827";
 const GRAY = "#6B7280";
 const BORDER = "#E5E7EB";
@@ -199,11 +234,11 @@ const LIGHT = "#F9FAFB";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  content: { padding: 24, paddingTop: 60 },
+  content: { padding: 24, paddingTop: 140 },
 
   brand: { alignItems: "center", marginBottom: 36 },
   logo: { fontSize: 48, marginBottom: 8 },
-  appName: { fontSize: 32, fontWeight: "800", color: DARK, letterSpacing: -1 },
+  appName: { fontSize: 32, fontFamily: 'DMSerifDisplay_400Regular', letterSpacing: -1 },
   tagline: { fontSize: 15, color: GRAY, marginTop: 4 },
 
   modeToggle: {
@@ -240,4 +275,9 @@ const styles = StyleSheet.create({
   submitBtnText: { color: "#fff", fontSize: 17, fontWeight: "700" },
 
   disclaimer: { fontSize: 12, color: GRAY, textAlign: "center", marginTop: 16, lineHeight: 18 },
+  webSignupBox: { alignItems: "center", paddingVertical: 32, paddingHorizontal: 8 },
+  webSignupTitle: { fontSize: 20, fontWeight: "700", color: DARK, marginBottom: 12, textAlign: "center" },
+  webSignupDesc: { fontSize: 15, color: GRAY, textAlign: "center", marginBottom: 28, lineHeight: 22 },
+  webSignupBtn: { backgroundColor: GREEN, borderRadius: 14, paddingVertical: 16, paddingHorizontal: 32, alignItems: "center" },
+  webSignupBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
 });

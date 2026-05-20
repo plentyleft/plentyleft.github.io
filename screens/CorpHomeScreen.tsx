@@ -3,9 +3,12 @@ import {
   View, Text, StyleSheet, TouchableOpacity,
   FlatList, RefreshControl, SafeAreaView, Alert, ActivityIndicator
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
+import { formatLbs } from "../lib/units";
 import { sendPushNotification } from "../lib/notifications";
 import CreateListingScreen from "./CreateListingScreen";
+import ImpactScreen from "./ImpactScreen";
 
 function formatPickup(start: string, end: string) {
   if (!start || !end) return "No pickup time set";
@@ -18,7 +21,8 @@ function formatPickup(start: string, end: string) {
 }
 
 export default function CorpHomeScreen() {
-  const [activeTab, setActiveTab] = useState<"post" | "claimed" | "listings">("post");
+  const navigation = useNavigation();
+  const [activeTab, setActiveTab] = useState<"post" | "claimed" | "listings" | "impact">("post");
   const [claimedListings, setClaimedListings] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -120,16 +124,15 @@ export default function CorpHomeScreen() {
     }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>plentyleft</Text>
-        <TouchableOpacity onPress={handleSignOut}>
-          <Text style={styles.signOut}>Sign Out</Text>
+        <Text style={styles.title}>
+          <Text style={styles.titlePlenty}>Plenty</Text>
+          <Text style={styles.titleLeft}>Left</Text>
+        </Text>
+        <TouchableOpacity onPress={() => navigation.navigate("Settings" as never)} hitSlop={8}>
+          <Text style={styles.accountLink}>Account</Text>
         </TouchableOpacity>
       </View>
 
@@ -155,27 +158,37 @@ export default function CorpHomeScreen() {
           onPress={() => setActiveTab("listings")}
         >
           <Text style={[styles.tabText, activeTab === "listings" && styles.tabTextActive]}>
-            My Listings
+            Listings
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "impact" && styles.tabActive]}
+          onPress={() => setActiveTab("impact")}
+        >
+          <Text style={[styles.tabText, activeTab === "impact" && styles.tabTextActive]}>
+            Impact
           </Text>
         </TouchableOpacity>
       </View>
 
       {activeTab === "post" ? (
         <CreateListingScreen />
+      ) : activeTab === "impact" ? (
+        <ImpactScreen orgId={orgId} role="admin" />
       ) : activeTab === "listings" ? (
         <FlatList
           data={myListings}
           keyExtractor={(item) => item.id}
-          ListEmptyComponent={loadingListings ? <ActivityIndicator style={{marginTop:60}} color="#3498db" size="large" /> : <Text style={styles.empty}>No listings posted yet.</Text>}
+          ListEmptyComponent={loadingListings ? <ActivityIndicator style={{marginTop:60}} color={GREEN} size="large" /> : <Text style={styles.empty}>No listings posted yet.</Text>}
           renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>{item.title}</Text>
               <Text style={styles.cardMeta}>📍 {item.pickup_address || "No address"}</Text>
               <Text style={styles.cardMeta}>🕐 {formatPickup(item.pickup_start, item.pickup_end)}</Text>
-              {item.quantity_kg ? <Text style={styles.cardMeta}>⚖️ {item.quantity_kg} kg</Text> : null}
+              {item.quantity_kg ? <Text style={styles.cardMeta}>⚖️ {formatLbs(item.quantity_kg)}</Text> : null}
               {item.serves_approx ? <Text style={styles.cardMeta}>👥 Serves ~{item.serves_approx}</Text> : null}
-              <View style={[styles.statusBadge, { backgroundColor: item.status === "completed" ? "#e8f8f0" : item.status === "matched" ? "#fff9e6" : "#e8f4fd" }]}>
-                <Text style={[styles.statusText, { color: item.status === "completed" ? "#27ae60" : item.status === "matched" ? "#f39c12" : "#3498db" }]}>
+              <View style={[styles.statusBadge, item.status === "completed" ? styles.statusCompleted : item.status === "matched" ? styles.statusMatched : styles.statusOpen]}>
+                <Text style={[styles.statusText, item.status === "completed" ? styles.statusTextCompleted : item.status === "matched" ? styles.statusTextMatched : styles.statusTextOpen]}>
                   {item.status === "completed" ? "✅ Completed" : item.status === "matched" ? "🔔 Claimed" : "🟢 Open"}
                 </Text>
               </View>
@@ -187,7 +200,7 @@ export default function CorpHomeScreen() {
           data={claimedListings}
           keyExtractor={(item) => item.id}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          ListEmptyComponent={loadingClaimed ? <ActivityIndicator style={{marginTop:60}} color="#3498db" size="large" /> : <Text style={styles.empty}>No claimed listings yet.</Text>}
+          ListEmptyComponent={loadingClaimed ? <ActivityIndicator style={{marginTop:60}} color={GREEN} size="large" /> : <Text style={styles.empty}>No claimed listings yet.</Text>}
           renderItem={({ item }) => {
             const match = item.matches?.[0];
             return (
@@ -195,10 +208,10 @@ export default function CorpHomeScreen() {
                 <Text style={styles.cardTitle}>{item.title}</Text>
                 <Text style={styles.cardMeta}>📍 {item.pickup_address || "No address"}</Text>
                 <Text style={styles.cardMeta}>🕐 {formatPickup(item.pickup_start, item.pickup_end)}</Text>
-                {item.quantity_kg ? <Text style={styles.cardMeta}>⚖️ {item.quantity_kg} kg</Text> : null}
+                {item.quantity_kg ? <Text style={styles.cardMeta}>⚖️ {formatLbs(item.quantity_kg)}</Text> : null}
                 {item.serves_approx ? <Text style={styles.cardMeta}>👥 Serves ~{item.serves_approx}</Text> : null}
-                <View style={styles.statusBadge}>
-                  <Text style={styles.statusText}>🔔 Claimed by nonprofit</Text>
+                <View style={[styles.statusBadge, styles.statusMatched]}>
+                  <Text style={[styles.statusText, styles.statusTextMatched]}>🔔 Claimed by nonprofit</Text>
                 </View>
                 <TouchableOpacity
                   style={[styles.confirmBtn, confirming === item.id && styles.confirmBtnDisabled]}
@@ -218,23 +231,35 @@ export default function CorpHomeScreen() {
   );
 }
 
+const GREEN = "#1C5C38";
+const AMBER = "#C8860A";
+const DARK = "#111827";
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f9f9f9" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#eee" },
-  title: { fontSize: 20, fontWeight: "700", color: "#1a1a1a" },
-  signOut: { fontSize: 14, color: "#e74c3c" },
+  title: { fontSize: 20, fontWeight: "700" },
+  titlePlenty: { color: DARK },
+  titleLeft: { color: AMBER },
+  accountLink: { fontSize: 14, color: GREEN, fontWeight: "600" },
   tabs: { flexDirection: "row", backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#eee" },
   tab: { flex: 1, paddingVertical: 12, alignItems: "center" },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: "#2ecc71" },
-  tabText: { fontSize: 15, color: "#999", fontWeight: "500" },
-  tabTextActive: { color: "#1a1a1a", fontWeight: "700" },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: AMBER },
+  tabText: { fontSize: 13, color: "#999", fontWeight: "500" },
+  tabTextActive: { color: DARK, fontWeight: "700" },
   empty: { textAlign: "center", marginTop: 60, color: "#999", fontSize: 16 },
   card: { backgroundColor: "#fff", margin: 12, borderRadius: 12, padding: 16, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
   cardTitle: { fontSize: 17, fontWeight: "600", marginBottom: 6 },
   cardMeta: { fontSize: 13, color: "#666", marginTop: 4 },
-  statusBadge: { marginTop: 10, backgroundColor: "#fff9e6", borderRadius: 6, paddingVertical: 6, paddingHorizontal: 10, alignSelf: "flex-start" },
-  statusText: { fontSize: 13, color: "#f39c12", fontWeight: "500" },
-  confirmBtn: { marginTop: 12, backgroundColor: "#3498db", borderRadius: 8, paddingVertical: 10, alignItems: "center" },
+  statusBadge: { marginTop: 10, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 10, alignSelf: "flex-start" },
+  statusMatched: { backgroundColor: "#FDF6E8" },
+  statusCompleted: { backgroundColor: "#E8F5EE" },
+  statusOpen: { backgroundColor: "#E8F5EE" },
+  statusText: { fontSize: 13, fontWeight: "500" },
+  statusTextMatched: { color: AMBER },
+  statusTextCompleted: { color: GREEN },
+  statusTextOpen: { color: GREEN },
+  confirmBtn: { marginTop: 12, backgroundColor: GREEN, borderRadius: 8, paddingVertical: 10, alignItems: "center" },
   confirmBtnDisabled: { backgroundColor: "#a0a0a0" },
   confirmBtnText: { color: "#fff", fontWeight: "600", fontSize: 15 },
 });

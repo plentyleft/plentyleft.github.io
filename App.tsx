@@ -9,6 +9,7 @@ import CreateListingScreen from "./screens/CreateListingScreen";
 import CorpHomeScreen from "./screens/CorpHomeScreen";
 import NonprofitHomeScreen from "./screens/NonprofitHomeScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
+import SettingsScreen from "./screens/SettingsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -45,13 +46,18 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {session ? (
-          userRole === "nonprofit" ? (
-            <Stack.Screen name="NonprofitHome" component={NonprofitHomeScreen} />
-          ) : userRole === "admin" ? (
-            <Stack.Screen name="CorpHome" component={CorpHomeScreen} />
-          ) : (
-            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-          )
+          <>
+            {userRole === "nonprofit" ? (
+              <Stack.Screen name="NonprofitHome" component={NonprofitHomeScreen} />
+            ) : userRole === "admin" ? (
+              <Stack.Screen name="CorpHome" component={CorpHomeScreen} />
+            ) : (
+              <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            )}
+            {(userRole === "admin" || userRole === "nonprofit") && (
+              <Stack.Screen name="Settings" component={SettingsScreen} />
+            )}
+          </>
         ) : (
           <Stack.Screen name="Auth" component={AuthScreen} />
         )}

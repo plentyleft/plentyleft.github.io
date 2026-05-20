@@ -14,6 +14,7 @@ import {
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../lib/supabase";
+import { kgToLbs, lbsToKg } from "../lib/units";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
@@ -151,7 +152,7 @@ export default function CreateListingScreen({ navigation }: any) {
 Look at this image and respond with ONLY a JSON object (no markdown, no explanation) in this exact format:
 {
   "food_types": ["array", "of", "food", "categories"],
-  "quantity_kg": <estimated total weight in kg as a number>,
+  "quantity_kg": <estimated total weight in kg as a number — we display lbs in the app>,
   "serves_approx": <estimated number of people this could feed as a number>,
   "dietary_flags": ["any", "dietary", "flags", "you", "can", "identify"],
   "notes": "brief description of what you see",
@@ -160,7 +161,7 @@ Look at this image and respond with ONLY a JSON object (no markdown, no explanat
 
 For food_types use categories like: sandwiches, salads, hot meals, produce, dairy, bakery, snacks, beverages, desserts, prepared food.
 For dietary_flags use: vegetarian, vegan, halal, kosher, gluten-free, nut-free, dairy-free — only include ones you can reasonably identify.
-Be conservative with quantity estimates. A typical office lunch for 20 people is about 10-15kg.`,
+Be conservative with quantity estimates. A typical office lunch for 20 people is about 22-33 lbs.`,
                 },
               ],
             },
@@ -177,7 +178,9 @@ Be conservative with quantity estimates. A typical office lunch for 20 people is
         ...prev,
         title: analysis.title || "",
         food_types: analysis.food_types || [],
-        quantity_kg: String(analysis.quantity_kg || ""),
+        quantity_kg: analysis.quantity_kg
+          ? String(Math.round(kgToLbs(analysis.quantity_kg) * 10) / 10)
+          : "",
         serves_approx: String(analysis.serves_approx || ""),
         dietary_flags: analysis.dietary_flags || [],
         notes: analysis.notes || "",
@@ -242,7 +245,7 @@ Be conservative with quantity estimates. A typical office lunch for 20 people is
         organization_id: userData.organization_id,
         title: form.title,
         food_types: form.food_types,
-        quantity_kg: parseFloat(form.quantity_kg),
+        quantity_kg: lbsToKg(parseFloat(form.quantity_kg)),
         serves_approx: parseInt(form.serves_approx) || null,
         dietary_flags: form.dietary_flags,
         pickup_address: form.pickup_address,
@@ -358,10 +361,10 @@ Be conservative with quantity estimates. A typical office lunch for 20 people is
       {/* Quantity */}
       <View style={styles.row}>
         <View style={styles.halfField}>
-          <Text style={styles.label}>Quantity (kg)</Text>
+          <Text style={styles.label}>Quantity (lbs)</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. 15"
+            placeholder="e.g. 33"
             keyboardType="decimal-pad"
             value={form.quantity_kg}
             onChangeText={(v) => setForm((p) => ({ ...p, quantity_kg: v }))}
@@ -482,7 +485,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   content: { padding: 20 },
   heading: { fontSize: 26, fontWeight: "700", color: DARK, marginBottom: 20 },
-
   // Photo
   photoButtons: { flexDirection: "row", gap: 12, marginBottom: 24 },
   cameraBtn: {

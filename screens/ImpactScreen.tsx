@@ -1,41 +1,82 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { supabase } from "../lib/supabase";
+import { kgToLbs } from "../lib/units";
 
-export default function ImpactScreen({ orgId }: { orgId: string | null }) {
+const GREEN = "#1C5C38";
+const DARK = "#111827";
+const GRAY = "#6B7280";
+
+type Props = {
+  orgId: string | null;
+  role: "admin" | "nonprofit";
+};
+
+export default function ImpactScreen({ orgId, role }: Props) {
   const [stats, setStats] = useState({
     totalClaims: 0,
     completedPickups: 0,
-    totalKg: 0,
+    totalLbs: 0,
     totalMeals: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (orgId) fetchImpact();
-  }, [orgId]);
+    else setLoading(false);
+  }, [orgId, role]);
 
   const fetchImpact = async () => {
-    const { data, error } = await supabase
-      .from("matches")
-      .select("*, listings(quantity_kg, serves_approx)")
-      .eq("nonprofit_id", orgId);
+    if (!orgId) return;
+    setLoading(true);
 
-    if (!error && data) {
-      const completed = data.filter(m => m.status === "accepted");
-      const totalKg = completed.reduce((sum, m) => sum + (m.listings?.quantity_kg || 0), 0);
-      const totalMeals = completed.reduce((sum, m) => sum + (m.listings?.serves_approx || 0), 0);
-      setStats({
-        totalClaims: data.length,
-        completedPickups: completed.length,
-        totalKg: Math.round(totalKg * 10) / 10,
-        totalMeals,
-      });
+    if (role === "nonprofit") {
+      const { data, error } = await supabase
+        .from("matches")
+        .select("status, listings(quantity_kg, serves_approx)")
+        .eq("nonprofit_id", orgId);
+
+      if (!error && data) {
+        const completed = data.filter((m) => m.status === "accepted");
+        const totalKg = completed.reduce((sum, m) => sum + (m.listings?.quantity_kg || 0), 0);
+        const totalMeals = completed.reduce((sum, m) => sum + (m.listings?.serves_approx || 0), 0);
+        setStats({
+          totalClaims: data.length,
+          completedPickups: completed.length,
+          totalLbs: Math.round(kgToLbs(totalKg) * 10) / 10,
+          totalMeals,
+        });
+      }
+    } else {
+      const { data, error } = await supabase
+        .from("listings")
+        .select("status, quantity_kg, serves_approx")
+        .eq("organization_id", orgId);
+
+      if (!error && data) {
+        const completed = data.filter((l) => l.status === "completed");
+        const totalKg = completed.reduce((sum, l) => sum + (l.quantity_kg || 0), 0);
+        const totalMeals = completed.reduce((sum, l) => sum + (l.serves_approx || 0), 0);
+        setStats({
+          totalClaims: data.length,
+          completedPickups: completed.length,
+          totalLbs: Math.round(kgToLbs(totalKg) * 10) / 10,
+          totalMeals,
+        });
+      }
     }
     setLoading(false);
   };
 
-  if (loading) return <View style={styles.container}><Text style={styles.loading}>Loading...</Text></View>;
+  const co2Lbs = Math.round(stats.totalLbs * 3.5);
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={GREEN} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -45,14 +86,16 @@ export default function ImpactScreen({ orgId }: { orgId: string | null }) {
       <View style={styles.grid}>
         <View style={styles.card}>
           <Text style={styles.cardNumber}>{stats.totalClaims}</Text>
-          <Text style={styles.cardLabel}>Total Claims</Text>
+          <Text style={styles.cardLabel}>
+            {role === "nonprofit" ? "Total Claims" : "Listings Posted"}
+          </Text>
         </View>
         <View style={styles.card}>
           <Text style={styles.cardNumber}>{stats.completedPickups}</Text>
           <Text style={styles.cardLabel}>Pickups Completed</Text>
         </View>
         <View style={styles.card}>
-          <Text style={styles.cardNumber}>{stats.totalKg} kg</Text>
+          <Text style={styles.cardNumber}>{stats.totalLbs} lbs</Text>
           <Text style={styles.cardLabel}>Food Rescued</Text>
         </View>
         <View style={styles.card}>
@@ -63,7 +106,7 @@ export default function ImpactScreen({ orgId }: { orgId: string | null }) {
 
       <View style={styles.banner}>
         <Text style={styles.bannerText}>
-          🌍 You've helped rescue {stats.totalKg} kg of food — that's approximately {Math.round(stats.totalKg * 3.5)} kg of CO₂ emissions avoided!
+          🌍 You've helped rescue {stats.totalLbs} lbs of food — that's approximately {co2Lbs} lbs of CO₂ emissions avoided!
         </Text>
       </View>
     </ScrollView>
@@ -71,15 +114,25 @@ export default function ImpactScreen({ orgId }: { orgId: string | null }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9f9f9" },
-  content: { padding: 20 },
-  loading: { textAlign: "center", marginTop: 60, color: "#999" },
-  heading: { fontSize: 24, fontWeight: "700", color: "#1a1a1a", marginBottom: 4 },
-  subheading: { fontSize: 15, color: "#666", marginBottom: 24 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 24 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 20, width: "47%", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, elevation: 2, alignItems: "center" },
-  cardNumber: { fontSize: 28, fontWeight: "700", color: "#2ecc71", marginBottom: 4 },
-  cardLabel: { fontSize: 13, color: "#666", textAlign: "center" },
-  banner: { backgroundColor: "#e8f8f0", borderRadius: 12, padding: 16 },
-  bannerText: { fontSize: 14, color: "#27ae60", lineHeight: 22 },
+  container: { flex: 1, backgroundColor: "#f9fafb" },
+  content: { padding: 20, paddingBottom: 40 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  heading: { fontSize: 24, fontWeight: "700", color: DARK, marginBottom: 4 },
+  subheading: { fontSize: 15, color: GRAY, marginBottom: 20 },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 20 },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    width: "47%",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    alignItems: "center",
+  },
+  cardNumber: { fontSize: 26, fontWeight: "700", color: GREEN, marginBottom: 4 },
+  cardLabel: { fontSize: 12, color: GRAY, textAlign: "center" },
+  banner: { backgroundColor: "#E8F5EE", borderRadius: 12, padding: 16 },
+  bannerText: { fontSize: 14, color: GREEN, lineHeight: 22 },
 });
