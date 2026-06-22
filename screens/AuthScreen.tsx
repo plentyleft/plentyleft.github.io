@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform, Linking,
+  StyleSheet, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform,
 } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 import { useFonts, DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display';
 import { supabase } from "../lib/supabase";
 
@@ -176,14 +177,6 @@ export default function AuthScreen() {
           </View>
         )}
         {mode === "signup" && !__DEV__ && (
-          <View style={styles.webSignupBox}>
-            <Text style={styles.webSignupTitle}>Create your account online</Text>
-            <Text style={styles.webSignupDesc}>Sign up at plentyleft.nyc to get started. It only takes a minute.</Text>
-            <TouchableOpacity style={styles.webSignupBtn} onPress={() => Linking.openURL("https://plentyleft.nyc")}>
-              <Text style={styles.webSignupBtnText}>Go to plentyleft.nyc →</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         {/* Email & password - only show for login */}
         {mode === "login" && (
