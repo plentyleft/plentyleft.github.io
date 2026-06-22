@@ -115,7 +115,6 @@ export default function AuthScreen() {
         </View>
 
         {/* Signup: in-app form in dev only; production uses website */}
-        {mode === "signup" && __DEV__ && (
           <View>
             <Text style={styles.label}>Organization name</Text>
             <TextInput
@@ -176,7 +175,6 @@ export default function AuthScreen() {
             </TouchableOpacity>
           </View>
         )}
-        {mode === "signup" && !__DEV__ && (
 
         {/* Email & password - only show for login */}
         {mode === "login" && (
