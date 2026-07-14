@@ -2,7 +2,7 @@
   "expo": {
     "name": "PlentyLeft",
     "slug": "mobile",
-    "version": "1.0.1",
+    "version": "1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,8 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.plentyleftapp.mobile",
+      "buildNumber": "13",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "PlentyLeft uses your camera to photograph food surplus listings so other users can see what items are available for pickup."
       }
     },
     "android": {
