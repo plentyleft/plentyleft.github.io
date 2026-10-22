@@ -1,14 +1,16 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, RefreshControl, SafeAreaView, Alert, ActivityIndicator
+  FlatList, RefreshControl, SafeAreaView, Alert, ActivityIndicator, Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 import { formatLbs } from "../lib/units";
 import { sendPushNotification } from "../lib/notifications";
+import { getBlockedOrganizationIds } from "../lib/moderation";
 import CreateListingScreen from "./CreateListingScreen";
 import ImpactScreen from "./ImpactScreen";
+import ReportBlockMenu from "../components/ReportBlockMenu";
 
 function formatPickup(start: string, end: string) {
   if (!start || !end) return "No pickup time set";
@@ -20,13 +22,32 @@ function formatPickup(start: string, end: string) {
   return `${dateStr}, ${startTime} – ${endTime}`;
 }
 
+type ListingRow = {
+  id: string;
+  title: string;
+  pickup_address?: string;
+  pickup_start?: string;
+  pickup_end?: string;
+  quantity_kg?: number;
+  serves_approx?: number;
+  status?: string;
+  photo_url?: string | null;
+  removed_at?: string | null;
+  matches?: {
+    id: string;
+    nonprofit_id: string;
+    status?: string;
+    nonprofit_name?: string;
+  }[];
+};
+
 export default function CorpHomeScreen() {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<"post" | "claimed" | "listings" | "impact">("post");
-  const [claimedListings, setClaimedListings] = useState([]);
+  const [claimedListings, setClaimedListings] = useState<ListingRow[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
-  const [myListings, setMyListings] = useState([]);
+  const [myListings, setMyListings] = useState<ListingRow[]>([]);
   const [loadingClaimed, setLoadingClaimed] = useState(true);
   const [loadingListings, setLoadingListings] = useState(true);
   const [orgId, setOrgId] = useState<string | null>(null);
@@ -56,13 +77,64 @@ export default function CorpHomeScreen() {
   }, [activeTab]);
 
   const fetchClaimed = async () => {
+    if (!orgId) return;
+    setLoadingClaimed(true);
+    const blocked = await getBlockedOrganizationIds();
+
     const { data, error } = await supabase
       .from("listings")
-      .select("*, matches(*)")
-      .eq("status", "matched").eq("organization_id", orgId)
+      .select("*, matches(id, nonprofit_id, status, pickup_confirmed_by_corp)")
+      .eq("status", "matched")
+      .eq("organization_id", orgId)
+      .is("removed_at", null)
       .order("created_at", { ascending: false });
-    console.log("fetchClaimed orgId:", orgId, "data:", JSON.stringify(data), "error:", JSON.stringify(error));
-    if (!error) setClaimedListings(data || []);
+
+    if (error) {
+      console.log("fetchClaimed error", error);
+      setLoadingClaimed(false);
+      return;
+    }
+
+    const rows = (data || []) as ListingRow[];
+    const npIds = Array.from(
+      new Set(
+        rows
+          .map((r) => r.matches?.[0]?.nonprofit_id)
+          .filter(Boolean) as string[],
+      ),
+    );
+
+    let nameById: Record<string, string> = {};
+    if (npIds.length) {
+      const { data: orgs } = await supabase
+        .from("organizations")
+        .select("id, name")
+        .in("id", npIds);
+      for (const o of orgs || []) nameById[o.id] = o.name;
+    }
+
+    const enriched = rows
+      .map((r) => {
+        const match = r.matches?.[0];
+        if (!match) return r;
+        return {
+          ...r,
+          matches: [
+            {
+              ...match,
+              nonprofit_name: nameById[match.nonprofit_id] || "Nonprofit",
+            },
+          ],
+        };
+      })
+      .filter((r) => {
+        const npId = r.matches?.[0]?.nonprofit_id;
+        if (npId && blocked.includes(npId)) return false;
+        return true;
+      });
+
+    setClaimedListings(enriched);
+    setLoadingClaimed(false);
   };
 
   const fetchMyListings = async () => {
@@ -71,8 +143,9 @@ export default function CorpHomeScreen() {
       .from("listings")
       .select("*")
       .eq("organization_id", orgId)
+      .is("removed_at", null)
       .order("created_at", { ascending: false });
-    if (!error) setMyListings(data || []);
+    if (!error) setMyListings((data as ListingRow[]) || []);
     setLoadingListings(false);
   };
 
@@ -82,7 +155,13 @@ export default function CorpHomeScreen() {
     setRefreshing(false);
   }, [orgId]);
 
-  const handleConfirmPickup = async (listing: any) => {
+  const onBlockedOrg = (blockedOrgId: string) => {
+    setClaimedListings((prev) =>
+      prev.filter((r) => r.matches?.[0]?.nonprofit_id !== blockedOrgId),
+    );
+  };
+
+  const handleConfirmPickup = async (listing: ListingRow) => {
     const match = listing.matches?.[0];
     if (!match) return;
     setConfirming(listing.id);
@@ -105,7 +184,6 @@ export default function CorpHomeScreen() {
 
       if (listingError) throw listingError;
 
-      // Notify nonprofit
       const { data: nonprofitUser } = await supabase
         .from("users")
         .select("push_token")
@@ -113,7 +191,11 @@ export default function CorpHomeScreen() {
         .eq("role", "nonprofit")
         .maybeSingle();
       if (nonprofitUser?.push_token) {
-        await sendPushNotification(nonprofitUser.push_token, "Pickup Confirmed! ✅", `Your pickup for "${listing.title}" has been confirmed. See you soon!`);
+        await sendPushNotification(
+          nonprofitUser.push_token,
+          "Pickup Confirmed! ✅",
+          `Your pickup for "${listing.title}" has been confirmed. See you soon!`,
+        );
       }
       Alert.alert("Confirmed!", "Pickup has been confirmed. The nonprofit will be notified.");
       fetchClaimed();
@@ -183,8 +265,11 @@ export default function CorpHomeScreen() {
           renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>{item.title}</Text>
+              {item.photo_url ? (
+                <Image source={{ uri: item.photo_url }} style={styles.photo} />
+              ) : null}
               <Text style={styles.cardMeta}>📍 {item.pickup_address || "No address"}</Text>
-              <Text style={styles.cardMeta}>🕐 {formatPickup(item.pickup_start, item.pickup_end)}</Text>
+              <Text style={styles.cardMeta}>🕐 {formatPickup(item.pickup_start || "", item.pickup_end || "")}</Text>
               {item.quantity_kg ? <Text style={styles.cardMeta}>⚖️ {formatLbs(item.quantity_kg)}</Text> : null}
               {item.serves_approx ? <Text style={styles.cardMeta}>👥 Serves ~{item.serves_approx}</Text> : null}
               <View style={[styles.statusBadge, item.status === "completed" ? styles.statusCompleted : item.status === "matched" ? styles.statusMatched : styles.statusOpen]}>
@@ -203,15 +288,32 @@ export default function CorpHomeScreen() {
           ListEmptyComponent={loadingClaimed ? <ActivityIndicator style={{marginTop:60}} color={GREEN} size="large" /> : <Text style={styles.empty}>No claimed listings yet.</Text>}
           renderItem={({ item }) => {
             const match = item.matches?.[0];
+            const npName = match?.nonprofit_name || "Nonprofit";
+            const npId = match?.nonprofit_id;
             return (
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>{item.title}</Text>
+                <View style={styles.cardTop}>
+                  <Text style={[styles.cardTitle, { flex: 1 }]}>{item.title}</Text>
+                  {npId ? (
+                    <ReportBlockMenu
+                      listingId={item.id}
+                      targetOrganizationId={npId}
+                      targetOrganizationName={npName}
+                      onBlocked={onBlockedOrg}
+                    />
+                  ) : null}
+                </View>
+                {item.photo_url ? (
+                  <Image source={{ uri: item.photo_url }} style={styles.photo} />
+                ) : null}
                 <Text style={styles.cardMeta}>📍 {item.pickup_address || "No address"}</Text>
-                <Text style={styles.cardMeta}>🕐 {formatPickup(item.pickup_start, item.pickup_end)}</Text>
+                <Text style={styles.cardMeta}>🕐 {formatPickup(item.pickup_start || "", item.pickup_end || "")}</Text>
                 {item.quantity_kg ? <Text style={styles.cardMeta}>⚖️ {formatLbs(item.quantity_kg)}</Text> : null}
                 {item.serves_approx ? <Text style={styles.cardMeta}>👥 Serves ~{item.serves_approx}</Text> : null}
                 <View style={[styles.statusBadge, styles.statusMatched]}>
-                  <Text style={[styles.statusText, styles.statusTextMatched]}>🔔 Claimed by nonprofit</Text>
+                  <Text style={[styles.statusText, styles.statusTextMatched]}>
+                    🔔 Claimed by {npName}
+                  </Text>
                 </View>
                 <TouchableOpacity
                   style={[styles.confirmBtn, confirming === item.id && styles.confirmBtnDisabled]}
@@ -249,7 +351,9 @@ const styles = StyleSheet.create({
   tabTextActive: { color: DARK, fontWeight: "700" },
   empty: { textAlign: "center", marginTop: 60, color: "#999", fontSize: 16 },
   card: { backgroundColor: "#fff", margin: 12, borderRadius: 12, padding: 16, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  cardTop: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 6 },
   cardTitle: { fontSize: 17, fontWeight: "600", marginBottom: 6 },
+  photo: { width: "100%", height: 160, borderRadius: 10, marginBottom: 8, backgroundColor: "#F3F4F6" },
   cardMeta: { fontSize: 13, color: "#666", marginTop: 4 },
   statusBadge: { marginTop: 10, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 10, alignSelf: "flex-start" },
   statusMatched: { backgroundColor: "#FDF6E8" },

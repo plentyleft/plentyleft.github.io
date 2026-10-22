@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.plentyleftapp.mobile",
-      "buildNumber": "13",
+      "buildNumber": "19",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "PlentyLeft uses your camera to photograph food surplus listings so other users can see what items are available for pickup."

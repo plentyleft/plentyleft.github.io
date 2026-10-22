@@ -15,6 +15,7 @@ import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../lib/supabase";
 import { kgToLbs, lbsToKg } from "../lib/units";
+import { assertListingTextClean } from "../lib/contentFilter";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
@@ -208,6 +209,16 @@ Be conservative with quantity estimates. A typical office lunch for 20 people is
   const handleSubmit = async () => {
     if (!form.title || !form.quantity_kg || !form.pickup_address || !form.pickup_start || !form.pickup_end) {
       Alert.alert("Missing fields", "Please fill in title, quantity, address, and pickup window.");
+      return;
+    }
+
+    const filterError = assertListingTextClean({
+      title: form.title,
+      notes: form.notes,
+      pickup_address: form.pickup_address,
+    });
+    if (filterError) {
+      Alert.alert("Content not allowed", filterError);
       return;
     }
 

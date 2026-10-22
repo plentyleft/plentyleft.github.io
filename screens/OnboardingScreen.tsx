@@ -16,7 +16,7 @@ export default function OnboardingScreen() {
   const preview = (route.params as { preview?: boolean } | undefined)?.preview ?? false;
   const [loading, setLoading] = useState(false);
 
-  const handleSelectRole = async (role: "admin" | "nonprofit") => {
+  const handleSelectNonprofit = async () => {
     if (preview) return;
     setLoading(true);
     try {
@@ -25,7 +25,7 @@ export default function OnboardingScreen() {
 
       const { error } = await supabase
         .from("users")
-        .update({ role })
+        .update({ role: "nonprofit" })
         .eq("id", user.id);
 
       if (error) throw error;
@@ -52,29 +52,22 @@ export default function OnboardingScreen() {
           <Text style={styles.titleLeft}>Left</Text>
         </Text>
         <Text style={styles.subtitle}>Surplus food, redistributed.</Text>
-        <Text style={styles.question}>How will you use PlentyLeft?</Text>
-
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => handleSelectRole("admin")}
-          disabled={loading}
-        >
-          <Text style={styles.cardEmoji}>🏢</Text>
-          <Text style={styles.cardTitle}>I'm a Corporation</Text>
-          <Text style={styles.cardDesc}>I have surplus food to donate and want to post listings for nonprofits to claim.</Text>
-        </TouchableOpacity>
+        <Text style={styles.question}>Confirm your nonprofit account</Text>
 
         <TouchableOpacity
           style={[styles.card, styles.cardGreen]}
-          onPress={() => handleSelectRole("nonprofit")}
+          onPress={handleSelectNonprofit}
           disabled={loading}
         >
           <Text style={styles.cardEmoji}>🤝</Text>
           <Text style={styles.cardTitle}>I'm a Nonprofit</Text>
-          <Text style={styles.cardDesc}>I serve people in need and want to claim surplus food donations from corporations.</Text>
+          <Text style={styles.cardDesc}>
+            I serve people in need and want to claim surplus food donations.
+            Corporate accounts are created on the website, not in this app.
+          </Text>
         </TouchableOpacity>
 
-        {loading && <ActivityIndicator style={{ marginTop: 20 }} color="#2ecc71" />}
+        {loading && <ActivityIndicator style={{ marginTop: 20 }} color={GREEN} />}
       </View>
     </SafeAreaView>
   );

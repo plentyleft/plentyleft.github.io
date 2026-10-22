@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  ActivityIndicator, Alert, RefreshControl, SafeAreaView,
+  ActivityIndicator, Alert, RefreshControl, SafeAreaView, Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 import { formatLbs } from "../lib/units";
+import { getBlockedOrganizationIds } from "../lib/moderation";
 import ImpactScreen from "./ImpactScreen";
+import ReportBlockMenu from "../components/ReportBlockMenu";
 
 interface Match {
   id: string;
@@ -15,6 +17,7 @@ interface Match {
   match_score: number;
   matched_at: string;
   listing: {
+    id?: string;
     title: string;
     food_types: string[];
     quantity_kg: number;
@@ -24,6 +27,9 @@ interface Match {
     pickup_end: string;
     notes: string;
     dietary_flags: string[];
+    photo_url?: string | null;
+    organization_id?: string;
+    organization?: { id: string; name: string } | null;
   };
 }
 
@@ -43,16 +49,62 @@ export default function NonprofitHomeScreen() {
       .from("users").select("organization_id").eq("id", user.id).maybeSingle();
     if (!userData?.organization_id) return;
     setOrgId(userData.organization_id);
+
+    const blocked = await getBlockedOrganizationIds();
+
     const { data, error } = await supabase
       .from("matches")
       .select(`id, listings_id, status, match_score, matched_at,
-        listing:listings(title, food_types, quantity_kg, serves_approx,
-          pickup_address, pickup_start, pickup_end, notes, dietary_flags)`)
+        listing:listings(
+          id, title, food_types, quantity_kg, serves_approx,
+          pickup_address, pickup_start, pickup_end, notes, dietary_flags,
+          photo_url, organization_id, removed_at
+        )`)
       .eq("nonprofit_id", userData.organization_id)
       .in("status", ["pending", "accepted"])
       .order("matched_at", { ascending: false });
     if (error) { Alert.alert("Error", error.message); return; }
-    setMatches((data as any) || []);
+
+    const rows = ((data as any) || []) as Match[];
+    const donorIds = Array.from(
+      new Set(
+        rows
+          .map((m) => (m.listing as any)?.organization_id)
+          .filter(Boolean) as string[],
+      ),
+    );
+    let nameById: Record<string, string> = {};
+    if (donorIds.length) {
+      const { data: orgs } = await supabase
+        .from("organizations")
+        .select("id, name")
+        .in("id", donorIds);
+      for (const o of orgs || []) nameById[o.id] = o.name;
+    }
+
+    const filtered = rows
+      .map((m) => {
+        const listing = m.listing as any;
+        if (!listing) return m;
+        const orgId = listing.organization_id;
+        return {
+          ...m,
+          listing: {
+            ...listing,
+            organization: orgId
+              ? { id: orgId, name: nameById[orgId] || "Donor" }
+              : null,
+          },
+        };
+      })
+      .filter((m) => {
+        const listing = m.listing as any;
+        if (!listing || listing.removed_at) return false;
+        const donorOrgId = listing.organization_id;
+        if (donorOrgId && blocked.includes(donorOrgId)) return false;
+        return true;
+      });
+    setMatches(filtered);
   }, []);
 
   useEffect(() => {
@@ -75,6 +127,16 @@ export default function NonprofitHomeScreen() {
       Alert.alert("Accepted", "The food pickup has been confirmed. The donor will be notified.");
     }
     setAccepting(null);
+  };
+
+  const onBlockedOrg = (blockedOrgId: string) => {
+    setMatches((prev) =>
+      prev.filter((m) => {
+        const listing = m.listing as any;
+        const donorOrgId = listing?.organization_id || listing?.organization?.id;
+        return donorOrgId !== blockedOrgId;
+      }),
+    );
   };
 
   const formatTime = (iso: string) => {
@@ -129,47 +191,66 @@ export default function NonprofitHomeScreen() {
           keyExtractor={(m) => m.id}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GREEN} />}
           contentContainerStyle={{ padding: 16, gap: 16 }}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{item.listing?.title || "Food listing"}</Text>
-                <View style={[styles.badge, item.status === "accepted" ? styles.badgeAccepted : styles.badgePending]}>
-                  <Text style={[styles.badgeText, item.status === "accepted" ? styles.badgeTextAccepted : styles.badgeTextPending]}>
-                    {item.status === "accepted" ? "Accepted" : "New match"}
-                  </Text>
+          renderItem={({ item }) => {
+            const listing = item.listing as any;
+            const donorOrgId = listing?.organization_id || listing?.organization?.id;
+            const donorName = listing?.organization?.name || "Donor";
+            return (
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>{listing?.title || "Food listing"}</Text>
+                  <View style={styles.headerRight}>
+                    <View style={[styles.badge, item.status === "accepted" ? styles.badgeAccepted : styles.badgePending]}>
+                      <Text style={[styles.badgeText, item.status === "accepted" ? styles.badgeTextAccepted : styles.badgeTextPending]}>
+                        {item.status === "accepted" ? "Accepted" : "New match"}
+                      </Text>
+                    </View>
+                    {donorOrgId ? (
+                      <ReportBlockMenu
+                        listingId={listing?.id || item.listings_id}
+                        targetOrganizationId={donorOrgId}
+                        targetOrganizationName={donorName}
+                        onBlocked={onBlockedOrg}
+                      />
+                    ) : null}
+                  </View>
                 </View>
-              </View>
-              <View style={styles.row}>
-                <Text style={styles.stat}>{formatLbs(item.listing?.quantity_kg)}</Text>
-                <Text style={styles.stat}>Feeds ~{item.listing?.serves_approx}</Text>
-              </View>
-              {item.listing?.food_types?.length > 0 && (
-                <View style={styles.chips}>
-                  {item.listing.food_types.map((t: string) => (
-                    <View key={t} style={styles.chip}><Text style={styles.chipText}>{t}</Text></View>
-                  ))}
+                <Text style={styles.orgLine}>From {donorName}</Text>
+                {listing?.photo_url ? (
+                  <Image source={{ uri: listing.photo_url }} style={styles.photo} />
+                ) : null}
+                <View style={styles.row}>
+                  <Text style={styles.stat}>{formatLbs(listing?.quantity_kg)}</Text>
+                  <Text style={styles.stat}>Feeds ~{listing?.serves_approx}</Text>
                 </View>
-              )}
-              {item.listing?.dietary_flags?.length > 0 && (
-                <Text style={styles.dietary}>{item.listing.dietary_flags.join(", ")}</Text>
-              )}
-              <View style={styles.divider} />
-              <Text style={styles.label}>{item.listing?.pickup_address || "Address TBD"}</Text>
-              <Text style={styles.label}>{formatTime(item.listing?.pickup_start)} - {formatTime(item.listing?.pickup_end)}</Text>
-              {item.listing?.notes ? <Text style={styles.notes}>{item.listing.notes}</Text> : null}
-              {item.status === "pending" && (
-                <TouchableOpacity
-                  style={[styles.acceptBtn, accepting === item.id && styles.acceptBtnDisabled]}
-                  onPress={() => acceptMatch(item.id)}
-                  disabled={accepting === item.id}
-                >
-                  {accepting === item.id
-                    ? <ActivityIndicator color="#fff" />
-                    : <Text style={styles.acceptBtnText}>Accept pickup</Text>}
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
+                {listing?.food_types?.length > 0 && (
+                  <View style={styles.chips}>
+                    {listing.food_types.map((t: string) => (
+                      <View key={t} style={styles.chip}><Text style={styles.chipText}>{t}</Text></View>
+                    ))}
+                  </View>
+                )}
+                {listing?.dietary_flags?.length > 0 && (
+                  <Text style={styles.dietary}>{listing.dietary_flags.join(", ")}</Text>
+                )}
+                <View style={styles.divider} />
+                <Text style={styles.label}>{listing?.pickup_address || "Address TBD"}</Text>
+                <Text style={styles.label}>{formatTime(listing?.pickup_start)} - {formatTime(listing?.pickup_end)}</Text>
+                {listing?.notes ? <Text style={styles.notes}>{listing.notes}</Text> : null}
+                {item.status === "pending" && (
+                  <TouchableOpacity
+                    style={[styles.acceptBtn, accepting === item.id && styles.acceptBtnDisabled]}
+                    onPress={() => acceptMatch(item.id)}
+                    disabled={accepting === item.id}
+                  >
+                    {accepting === item.id
+                      ? <ActivityIndicator color="#fff" />
+                      : <Text style={styles.acceptBtnText}>Accept pickup</Text>}
+                  </TouchableOpacity>
+                )}
+              </View>
+            );
+          }}
         />
       )}
     </SafeAreaView>
@@ -207,8 +288,11 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 20, fontWeight: "700", color: "#111", marginBottom: 8 },
   emptyText: { fontSize: 15, color: "#666", textAlign: "center" },
   card: { backgroundColor: "#fff", borderRadius: 16, padding: 16, shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   cardTitle: { fontSize: 17, fontWeight: "700", color: "#111", flex: 1, marginRight: 8 },
+  orgLine: { fontSize: 13, color: "#666", marginBottom: 8 },
+  photo: { width: "100%", height: 160, borderRadius: 12, marginBottom: 10, backgroundColor: "#F3F4F6" },
   badge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
   badgePending: { backgroundColor: "#FDF6E8" },
   badgeAccepted: { backgroundColor: "#E8F5EE" },
