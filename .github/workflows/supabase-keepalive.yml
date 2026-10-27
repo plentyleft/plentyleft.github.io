@@ -1,0 +1,18 @@
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: "17 13 */2 * *"
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          curl -fsS -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" "$SUPABASE_URL/rest/v1/listings?select=id&limit=1"
+          echo "Ping OK $(date -u +%Y-%m-%dT%H:%M:%SZ)"
